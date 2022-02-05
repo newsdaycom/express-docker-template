@@ -1,0 +1,23 @@
+version: "3"
+
+services:
+  service-name:
+    container_name: service-name
+    hostname: service-name
+    volumes:
+      - .:/usr/app
+      - /usr/app/node_modules
+    build:
+      context: .
+    environment:
+      - ENV
+    restart: "always"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+networks:
+  default:
+    external:
+      name: special-projects

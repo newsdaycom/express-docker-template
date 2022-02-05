@@ -1,0 +1,9 @@
+#!/bin/bash
+
+REPO_NAME="DOCKERHUBUSER/REPO_NAME"
+TAG=$(date '+%Y%m%d%H%M%S')
+
+docker build -t "$REPO_NAME:$TAG" .
+docker push "$REPO_NAME:$TAG"
+
+echo "Built and pushed $REPO_NAME:$TAG"

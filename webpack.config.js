@@ -9,7 +9,7 @@ module.exports = {
   output: {
     filename: 'server.js',
     path: path.resolve(__dirname, 'bin'),
-    publicPath: '/dist/'
+    publicPath: '/bin/'
   },
   devtool: 'inline-source-map',
   devServer: {

@@ -7,11 +7,13 @@ services:
     volumes:
       - .:/usr/app
       - /usr/app/node_modules
+      - /usr/app/bin
     build:
       context: .
     environment:
       - ENV
       - BUILD_VERSION=local-build
+      - NODE_ENV=${ENV}
     logging:
       driver: 'json-file'
       options:

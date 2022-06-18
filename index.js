@@ -15,7 +15,7 @@ app.use(cookieParser());
 app.use('/api', api_headers, apiRouter, api_errors);
 
 app.listen(3000, () => {
-  console.log('Service running on port 3000');
+  console.info('Service running on port 3000');
 });
 
 export default app;

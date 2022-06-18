@@ -2,6 +2,13 @@ const path = require('path');
 const ESLintLoader = require('eslint-webpack-plugin');
 const PrettierLoader = require('prettier-webpack-plugin');
 const NodemonPlugin = require('nodemon-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
+
+const pure_funcs = [];
+
+if (process.env.ENV === 'prod') {
+  pure_funcs.push('console.log');
+}
 
 module.exports = {
   entry: ['./'],
@@ -30,6 +37,21 @@ module.exports = {
         test: /\.(scss|css)$/,
         use: ['style-loader', 'css-loader', 'sass-loader']
       }
+    ]
+  },
+  optimization: {
+    minimize: true,
+    minimizer: [
+      new TerserPlugin({
+        test: /\.(js|jsx)$/,
+        extractComments: true,
+        parallel: true,
+        terserOptions: {
+          compress: {
+            pure_funcs
+          }
+        }
+      })
     ]
   },
   plugins: [

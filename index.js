@@ -1,3 +1,5 @@
+// entry file
+
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';

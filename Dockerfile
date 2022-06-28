@@ -26,7 +26,7 @@ ARG BUILD_VERSION
 ARG ENV
 
 ENV ENV=${ENV}
-ENV BUILD_VERSION=${BUILD_VERSION}}
+ENV BUILD_VERSION=${BUILD_VERSION}
 ENV NODE_ENV=${ENV}
 
 # If this is a prod environment, package the code

@@ -11,7 +11,7 @@ BRANCH=`git branch | grep '^*' | sed 's/* //'`
 TAG="build-$BRANCH-$(date '+%Y%m%d%H%M%S')"
 
 ## Build the image using the repo name, tag and passing in the env var and build version
-docker build -t "$REPO_NAME:$TAG" --build-arg ENV=$ENV --build-arg TARGETENV=$ENV --build-arg BUILD_VERSION=$BUILD_VERSION .
+docker build -t "$REPO_NAME:$TAG" --build-arg ENV=$ENV --build-arg TARGETENV=$ENV --build-arg BUILD_VERSION=$TAG .
 
 ## wait 10 seconds
 sleep 10

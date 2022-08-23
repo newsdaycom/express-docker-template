@@ -1,23 +1,12 @@
 {
   "name": "express-docker-template",
-  "version": "0.0.0",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./app.js",
-    "start:dev": "nodemon -L ./app.js"
+    "dev": "npx eslint --fix --ext 'js,jsx' .; npx webpack watch --mode development",
+    "build": "echo 'Building production pack'; npx eslint --fix --ext 'js,jsx' .; npx webpack --mode production",
+    "start": "node ./bin/server.js"
   },
-  "prettier": {
-    "tabWidth": 2,
-    "semi": true,
-    "singleQuote": true,
-    "trailingComma": "es5",
-    "bracketSpacing": true,
-    "jsxBracketSameLine": false,
-    "jsxSingleQuote": true,
-    "quoteProps": "consistent",
-    "arrowParens": "avoid"
-  },
-  "type": "module",
   "dependencies": {
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
@@ -25,5 +14,30 @@
     "http-errors": "^2.0.0",
     "morgan": "~1.9.1",
     "nodemon": "^2.0.15"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.18.0",
+    "@babel/eslint-parser": "^7.17.0",
+    "@babel/preset-env": "^7.18.0",
+    "@babel/preset-react": "^7.17.12",
+    "babel-loader": "^8.2.5",
+    "eslint": "^8.16.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jsx-a11y": "^6.5.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.0.0",
+    "eslint-plugin-proposal": "^2.3.3",
+    "eslint-plugin-react": "^7.30.0",
+    "eslint-plugin-react-hooks": "^4.5.0",
+    "eslint-webpack-plugin": "^3.1.1",
+    "nodemon-webpack-plugin": "^4.8.0",
+    "prettier": "^2.6.2",
+    "prettier-webpack-plugin": "^1.2.0",
+    "terser-webpack-plugin": "^5.3.3",
+    "webpack": "^5.72.1",
+    "webpack-cli": "^4.9.2",
+    "webpack-dev-server": "^4.9.0"
   }
 }

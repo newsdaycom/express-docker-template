@@ -90,6 +90,10 @@ module.exports = {
       // Environment variables to pass to the script to be restarted
       env: {
         NODE_ENV: 'development'
+      },
+
+      nodemonConfig: {
+        legacyWatch: true
       }
     })
   ],

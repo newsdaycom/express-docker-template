@@ -17,6 +17,7 @@ module.exports = {
     path: path.resolve(__dirname, 'bin'),
     publicPath: '/bin/'
   },
+  externals: [{ express: "require('express')" }],
   devtool: 'inline-source-map',
   devServer: {
     port: 3888, // default: 8080

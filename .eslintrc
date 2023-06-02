@@ -22,7 +22,6 @@
     "eslint:recommended",
     "plugin:react/recommended",
     "plugin:proposal/recommended",
-    "prettier",
     "airbnb"
   ],
   "plugins": ["import", "node", "promise", "proposal", "react", "react-hooks"],

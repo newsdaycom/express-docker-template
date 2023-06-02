@@ -1,6 +1,5 @@
 const path = require('path');
 const ESLintLoader = require('eslint-webpack-plugin');
-const PrettierLoader = require('prettier-webpack-plugin');
 const NodemonPlugin = require('nodemon-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 
@@ -32,10 +31,6 @@ module.exports = {
         test: /\.(js|jsx)$/,
         exclude: /node_modules/,
         use: ['babel-loader']
-      },
-      {
-        test: /\.(scss|css)$/,
-        use: ['style-loader', 'css-loader', 'sass-loader']
       }
     ]
   },
@@ -59,7 +54,6 @@ module.exports = {
       fix: true,
       files: ['**/*.jsx', '**/*.js']
     }),
-    new PrettierLoader({ extensions: ['.scss'] }),
     new NodemonPlugin({
       // If using more than one entry, you can specify
       // which output file will be restarted.

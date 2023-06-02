@@ -28,7 +28,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.(js|jsx)$/,
+        test: /\.(js)$/,
         exclude: /node_modules/,
         use: ['babel-loader']
       }
@@ -38,7 +38,7 @@ module.exports = {
     minimize: true,
     minimizer: [
       new TerserPlugin({
-        test: /\.(js|jsx)$/,
+        test: /\.(js)$/,
         extractComments: true,
         parallel: true,
         terserOptions: {
@@ -52,7 +52,7 @@ module.exports = {
   plugins: [
     new ESLintLoader({
       fix: true,
-      files: ['**/*.jsx', '**/*.js']
+      files: ['**/*.js']
     }),
     new NodemonPlugin({
       // If using more than one entry, you can specify
@@ -92,6 +92,6 @@ module.exports = {
     })
   ],
   resolve: {
-    extensions: ['*', '.js', '.jsx']
+    extensions: ['*', '.js']
   }
 };

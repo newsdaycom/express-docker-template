@@ -3,12 +3,8 @@
   "parserOptions": {
     "requireConfigFile": false,
     "ecmaVersion": 2020,
-    "ecmaFeatures": {
-      "jsx": true
-    },
     "sourceType": "module",
     "babelOptions": {
-      "presets": ["@babel/preset-react"]
     }
   },
   "env": {
@@ -20,11 +16,10 @@
   },
   "extends": [
     "eslint:recommended",
-    "plugin:react/recommended",
     "plugin:proposal/recommended",
-    "airbnb"
+    "airbnb-base"
   ],
-  "plugins": ["import", "node", "promise", "proposal", "react", "react-hooks"],
+  "plugins": ["import", "node", "promise", "proposal"],
   "globals": {
     "document": "readonly",
     "navigator": "readonly",
@@ -368,11 +363,6 @@
         "allowTemplateLiterals": true
       }
     ],
-    "react/jsx-uses-vars": 1,
-    "react/react-in-jsx-scope": 0,
-    "react/jsx-filename-extension": "warn",
-    "react-hooks/rules-of-hooks": "error", // Checks rules of Hooks
-    "react-hooks/exhaustive-deps": "warn", // Checks effect dependencies
     "rest-spread-spacing": ["error", "never"],
     "semi": ["warn", "always"],
     "semi-spacing": [

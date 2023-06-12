@@ -16,6 +16,10 @@ app.use(cookieParser());
 
 app.use('/api', api_headers, apiRouter, api_errors);
 
+app.get('/', (req, res, next) => {
+  res.send('<h1>Microservice is running</h1>');
+});
+
 app.listen(3000, () => {
   console.info('Service running on port 3000');
 });

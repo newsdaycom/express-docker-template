@@ -15,7 +15,7 @@ One of two ways to do this is to add an `nginx` rule to the `local.tools.newsday
 1. Go to the `sites-available` directory located in `<your virtual_machines directory->/proxy/nginx-config/`
 2. Open the file `local.tools.newsday.com.conf` in your preferred text editor.
 
-To open the file in `nano` for example use the command `nano local.tools.newsday.conf`
+    To open the file in `nano` for example use the command `nano local.tools.newsday.conf`
 
 3. Inside the file you will find various rules for different microservices that follow a similar format. Use the format below to add an additional rule for your microservice, note the braces mark the rule blocks so ensure your rule isn't placed inside another rule block.
 

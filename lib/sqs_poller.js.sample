@@ -22,6 +22,10 @@ export function SQS_Poller(config = {}) {
     ...config // override defaults with any provided config
   };
 
+  this.tasks = [];
+
+  this.addTask = task => this.tasks.push(task);
+
   this.getMessages = async () => {
     // clear any timeouts to free up memory
     clearTimeout(this.repollTimeout);
@@ -30,7 +34,7 @@ export function SQS_Poller(config = {}) {
     const { Messages } = await sqs
       .receiveMessage({
         QueueUrl: this.config.queues[process.env.ENV],
-        MaxNumberOfMessages: 10
+        MaxNumberOfMessages: this.config.messagesPerPoll
       })
       .promise();
 
@@ -41,7 +45,7 @@ export function SQS_Poller(config = {}) {
         this.getMessages,
         this.config.emptyTimeout
       );
-      return [];
+      return false;
     }
 
     // otherwise, create a new Message object for each message
@@ -57,7 +61,7 @@ export function SQS_Poller(config = {}) {
     // and repoll after the timeout
     this.repollTimeout = setTimeout(this.getMessages, this.config.timeout);
 
-    return messages;
+    this.tasks.forEach(task => task(messages));
   };
 }
 
@@ -104,3 +108,19 @@ export function Message({ message, sqs, queueUrl }) {
 const sqs_poller = new SQS_Poller();
 
 export default sqs_poller;
+
+/** Example usage */
+
+function run() {
+  // set up the tasks to run when messages are received
+  sqs_poller.addTask(messages => {
+    messages.forEach(message => {
+      const messageBody = message.getMessage();
+      console.log('>>> MESSAGE BODY >>>', messageBody);
+      message.delete();
+    });
+  });
+
+  // start polling
+  sqs_poller.getMessages();
+}

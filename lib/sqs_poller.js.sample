@@ -24,7 +24,27 @@ export function SQS_Poller(config = {}) {
 
   this.tasks = [];
 
-  this.addTask = task => this.tasks.push(task);
+  /**
+   * Add a task to be run after receiving messages
+   *
+   * Each task should expect an array of Message objects
+   * @returns {SQS_Poller} Returns the poller object to allow chaining
+   */
+  this.addTask = task => {
+    this.tasks.push(task);
+    return this;
+  };
+
+  /**
+   * Update the config
+   *
+   * Provided object will be shallow merged into the config object
+   * @returns {SQS_Poller} Returns the poller object to allow chaining
+   */
+  this.setConfig = config => {
+    this.config = { ...this.config, ...config };
+    return this;
+  };
 
   this.getMessages = async () => {
     // clear any timeouts to free up memory
@@ -128,7 +148,7 @@ function run() {
         message.requeue();
       }
     });
-  });
+  }).addTask(...);
 
   // start polling
   sqs_poller.getMessages();

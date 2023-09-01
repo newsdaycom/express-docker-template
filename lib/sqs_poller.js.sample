@@ -87,6 +87,10 @@ export function Message({ message, sqs, queueUrl }) {
       .promise();
   };
 
+  this.requeue = () => {
+    clearInterval(this.messageVisibilityInterval);
+  };
+
   this.getMessage = () => {
     clearInterval(this.messageVisibilityInterval);
     this.messageVisibilityInterval = setInterval(() => {
@@ -115,9 +119,14 @@ function run() {
   // set up the tasks to run when messages are received
   sqs_poller.addTask(messages => {
     messages.forEach(message => {
-      const messageBody = message.getMessage();
-      console.log('>>> MESSAGE BODY >>>', messageBody);
-      message.delete();
+      try {
+        const messageBody = message.getMessage();
+        console.log('>>> MESSAGE BODY >>>', messageBody);
+        message.delete();
+      } catch (e) {
+        // if errored, let message go back into the queue to be retried
+        message.requeue();
+      }
     });
   });
 

@@ -1,0 +1,106 @@
+/**
+ * Sample poller file for SQS
+ *
+ * Connects based on environment and repolls at different intervals based on response payload
+ */
+
+import AWS from 'aws-sdk';
+const { SQS } = AWS;
+
+export function SQS_Poller(config = {}) {
+  const sqs = new SQS();
+
+  this.config = {
+    queues: {
+      local: '',
+      stage: '',
+      prod: ''
+    },
+    emptyTimeout: 2 * 60 * 1000, // 2 minutes when the response is empty
+    timeout: 10 * 1000, // 10 seconds when the response is not empty
+    messagesPerPoll: 10,
+    ...config // override defaults with any provided config
+  };
+
+  this.getMessages = async () => {
+    // clear any timeouts to free up memory
+    clearTimeout(this.repollTimeout);
+
+    // get the next batch of messages
+    const { Messages } = await sqs
+      .receiveMessage({
+        QueueUrl: this.config.queues[process.env.ENV],
+        MaxNumberOfMessages: 10
+      })
+      .promise();
+
+    // if there are no messages, wait a bit and try again
+    if (!Messages || Messages.length === 0) {
+      console.log('No messages found');
+      this.repollTimeout = setTimeout(
+        this.getMessages,
+        this.config.emptyTimeout
+      );
+      return [];
+    }
+
+    // otherwise, create a new Message object for each message
+    const messages = Messages.map(
+      m =>
+        new Message({
+          message: m,
+          sqs,
+          queueUrl: this.config.queues[process.env.ENV]
+        })
+    );
+
+    // and repoll after the timeout
+    this.repollTimeout = setTimeout(this.getMessages, this.config.timeout);
+
+    return messages;
+  };
+}
+
+/**
+ * Creates a message object with some helpful default behaviors for consuming SQS messages
+ *
+ * Messages are kept out of requeue when retrieved. A delete function has been provided to clear intervals and delete the message when done
+ */
+export function Message({ message, sqs, queueUrl }) {
+  this.message = message;
+  this.sqs = sqs;
+  this.queueUrl = queueUrl;
+  let { Body } = this.message;
+  const { ReceiptHandle } = this.message;
+
+  this.delete = () => {
+    clearInterval(this.messageVisibilityInterval);
+    return sqs
+      .deleteMessage({
+        QueueUrl: this.queueUrl,
+        ReceiptHandle: this.message.ReceiptHandle
+      })
+      .promise();
+  };
+
+  this.getMessage = () => {
+    clearInterval(this.messageVisibilityInterval);
+    this.messageVisibilityInterval = setInterval(() => {
+      sqs.changeMessageVisibility({
+        QueueUrl: this.queueUrl,
+        ReceiptHandle,
+        VisibilityTimeout: 30
+      });
+    }, 27 * 1000);
+
+    if (Body) {
+      Body = JSON.parse(Body);
+    }
+
+    return Body;
+  };
+}
+
+const sqs_poller = new SQS_Poller();
+
+export default sqs_poller;

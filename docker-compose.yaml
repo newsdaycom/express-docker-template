@@ -12,8 +12,8 @@ services:
       context: .
     environment:
       - ENV
-      - BUILD_VERSION=local-build
-      - NODE_ENV=${ENV}
+      - BUILD_VERSION=local-build # DO NOT SPECIFY WHEN DEPLOYING TO STAGE
+      - NODE_ENV=${ENV} # CAN ONLY BE 'local' OR 'production', hardcode to 'production' WHEN DEPLOYING TO STAGE AND PROD
     logging:
       driver: 'json-file'
       options:

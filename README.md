@@ -20,14 +20,14 @@ One of two ways to do this is to add an `nginx` rule to the `local.tools.newsday
 3. Inside the file you will find various rules for different microservices that follow a similar format. Use the format below to add an additional rule for your microservice, note the braces mark the rule blocks so ensure your rule isn't placed inside another rule block.
 
 ```nginx
-location ~ /<preferred name for URL of microservice>(.*) {
+location ~ /<preferred URL for microservice>(.*) {
     proxy_set_header HTTP_X_FORWARDED_PROTO https;
-    set $upstream http://<hostnae>:3000$1$is_args$args;
+    set $upstream http://<hostname>:3000$1$is_args$args;
     proxy_pass  $upstream;
 }
 ```
 
-where `hostname` is the `hostname` for your microservice as defined in its `docker-compose.yml` file.
+where `hostname` is the `hostname` for your microservice as defined in its `docker-compose.yaml` file.
 4. Save, exit and then restart Docker (one is to click the docker icon in the menu bar on the tip and click "Restart").
 
 Ensure your microservice is running (execute the `bash rebuild` command) then navigate to `local.tools.newsday.com/<your microservice endpoint>` and you should be able to see some message indicating the microservice is online.

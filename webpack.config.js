@@ -36,7 +36,7 @@ module.exports = {
     ]
   },
   optimization: {
-    minimize: false,
+    minimize: process.env.ENV !== 'local',
     minimizer: [
       new TerserPlugin({
         test: /\.(js)$/,

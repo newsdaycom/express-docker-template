@@ -1,6 +1,5 @@
 const path = require('path');
 const ESLintLoader = require('eslint-webpack-plugin');
-const PrettierLoader = require('prettier-webpack-plugin');
 const NodemonPlugin = require('nodemon-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 
@@ -18,6 +17,7 @@ module.exports = {
     path: path.resolve(__dirname, 'bin'),
     publicPath: '/bin/'
   },
+  externals: [{ express: "require('express')" }],
   devtool: 'inline-source-map',
   devServer: {
     port: 3888, // default: 8080
@@ -29,21 +29,17 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.(js|jsx)$/,
+        test: /\.(js)$/,
         exclude: /node_modules/,
         use: ['babel-loader']
-      },
-      {
-        test: /\.(scss|css)$/,
-        use: ['style-loader', 'css-loader', 'sass-loader']
       }
     ]
   },
   optimization: {
-    minimize: true,
+    minimize: process.env.ENV !== 'local',
     minimizer: [
       new TerserPlugin({
-        test: /\.(js|jsx)$/,
+        test: /\.(js)$/,
         extractComments: true,
         parallel: true,
         terserOptions: {
@@ -57,9 +53,8 @@ module.exports = {
   plugins: [
     new ESLintLoader({
       fix: true,
-      files: ['**/*.jsx', '**/*.js']
+      files: ['**/*.js']
     }),
-    new PrettierLoader({ extensions: ['.scss'] }),
     new NodemonPlugin({
       // If using more than one entry, you can specify
       // which output file will be restarted.
@@ -98,6 +93,6 @@ module.exports = {
     })
   ],
   resolve: {
-    extensions: ['*', '.js', '.jsx']
+    extensions: ['*', '.js']
   }
 };

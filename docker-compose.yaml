@@ -17,6 +17,8 @@ services:
       - BUILD_VERSION=local-build # DO NOT SPECIFY WHEN DEPLOYING TO STAGE
       - NODE_ENV=${ENV} # CAN ONLY BE 'local' OR 'production', hardcode to 'production' WHEN DEPLOYING TO STAGE AND PROD
       - NODE_OPTIONS=--enable-source-maps
+      - LOG_LEVEL=info
+      - LOG_PRETTY=on
     logging:
       driver: "json-file"
       options:

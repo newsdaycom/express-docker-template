@@ -29,7 +29,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.(js)$/,
+        test: /\.(m|c)?(js)$/,
         exclude: /node_modules/,
         use: ['babel-loader']
       }
@@ -39,7 +39,7 @@ module.exports = {
     minimize: process.env.ENV !== 'local',
     minimizer: [
       new TerserPlugin({
-        test: /\.(js)$/,
+        test: /\.(m|c)?(js)$/,
         extractComments: true,
         parallel: true,
         terserOptions: {
@@ -53,7 +53,7 @@ module.exports = {
   plugins: [
     new ESLintLoader({
       fix: true,
-      files: ['**/*.js']
+      files: ['**/*.js', '**/*.mjs', '**/*.cjs']
     }),
     new NodemonPlugin({
       // If using more than one entry, you can specify
@@ -73,7 +73,7 @@ module.exports = {
       ignore: ['*.js.map'],
 
       // Extensions to watch.
-      ext: 'js,njk,json',
+      ext: 'js,njk,json,mjs,cjs',
 
       // Unlike the cli option, delay here is in milliseconds (also note that it's a string).
       // Here's 1 second delay:
@@ -93,6 +93,6 @@ module.exports = {
     })
   ],
   resolve: {
-    extensions: ['*', '.js']
+    extensions: ['*', '.js', '.mjs', '.cjs']
   }
 };

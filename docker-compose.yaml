@@ -1,9 +1,11 @@
-version: '3'
+version: "3"
+
+## Search and replace 'express-docker-template' with the name of the service
 
 services:
-  service-name:
-    container_name: service-name
-    hostname: service-name
+  express-docker-template:
+    container_name: express-docker-template
+    hostname: express-docker-template
     volumes:
       - .:/usr/app
       - /usr/app/node_modules
@@ -14,11 +16,12 @@ services:
       - ENV
       - BUILD_VERSION=local-build # DO NOT SPECIFY WHEN DEPLOYING TO STAGE
       - NODE_ENV=${ENV} # CAN ONLY BE 'local' OR 'production', hardcode to 'production' WHEN DEPLOYING TO STAGE AND PROD
+      - NODE_OPTIONS=--enable-source-maps
     logging:
-      driver: 'json-file'
+      driver: "json-file"
       options:
-        max-size: '5m'
-        max-file: '2'
+        max-size: "5m"
+        max-file: "2"
 networks:
   default:
     name: special-projects

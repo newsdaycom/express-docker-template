@@ -1,4 +1,4 @@
-FROM node:20-bookworm-slim
+FROM node:22-bookworm-slim
 
 # Set up directories in advance so we can control the permissions
 RUN mkdir -p /usr/app/bin && mkdir -p /usr/app/node_modules && chown -R node:node /usr/app
@@ -30,7 +30,7 @@ ENV BUILD_VERSION=${BUILD_VERSION}
 ENV NODE_ENV=${ENV}
 
 # If this is a prod environment, package the code
-RUN if [ "$ENV" != "local" ]; then yarn build; fi
+RUN if [ "$ENV" != "local" ]; then node --run build; fi
 
 # Start the service
 CMD ["bash", "./start-service"]

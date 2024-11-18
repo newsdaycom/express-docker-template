@@ -10,7 +10,8 @@ import logger from './lib/logger';
 
 const app = express();
 
-app.use(logger.info);
+// this does not work, app.use is meant to be used with express js middleware, which logger.info is not
+// app.use(logger.info);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());

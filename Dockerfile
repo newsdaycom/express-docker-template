@@ -1,4 +1,4 @@
-FROM node:20-bookworm-slim
+FROM node:22-bookworm-slim
 
 # Set up directories in advance so we can control the permissions
 RUN mkdir -p /usr/app/bin && mkdir -p /usr/app/node_modules && chown -R node:node /usr/app

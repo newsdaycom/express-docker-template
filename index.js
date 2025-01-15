@@ -2,7 +2,6 @@
 
 import express from 'express';
 import cookieParser from 'cookie-parser';
-// import logger from "morgan";
 import apiRouter from './routes/api';
 import api_headers from './lib/api_headers';
 import api_errors from './lib/api_errors';

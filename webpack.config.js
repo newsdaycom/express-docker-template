@@ -53,7 +53,8 @@ module.exports = {
   plugins: [
     new ESLintLoader({
       fix: true,
-      files: ['**/*.js', '**/*.mjs', '**/*.cjs']
+      files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
+      configType: 'flat'
     }),
     new NodemonPlugin({
       // If using more than one entry, you can specify

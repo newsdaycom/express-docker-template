@@ -14,6 +14,7 @@
     "express": "^4.21.2",
     "http-errors": "^2.0.0",
     "morgan": "^1.9.1",
+    "webpack-node-externals": "^3.0.0",
     "winston": "^3.17.0"
   },
   "devDependencies": {

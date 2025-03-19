@@ -6,10 +6,11 @@ import apiRouter from './routes/api';
 import api_headers from './lib/api_headers';
 import api_errors from './lib/api_errors';
 import logger from './lib/logger';
+import morgan from 'morgan';
 
 const app = express();
 
-app.use(logger.info);
+app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());

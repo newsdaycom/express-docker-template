@@ -2,11 +2,11 @@
 
 import express from 'express';
 import cookieParser from 'cookie-parser';
+import morgan from 'morgan';
 import apiRouter from './routes/api';
 import api_headers from './lib/api_headers';
 import api_errors from './lib/api_errors';
 import logger from './lib/logger';
-import morgan from 'morgan';
 
 const app = express();
 

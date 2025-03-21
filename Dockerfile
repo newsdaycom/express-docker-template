@@ -16,7 +16,7 @@ COPY --chown=node:node package.json .
 COPY --chown=node:node yarn.lock .
 
 # Install the dependencies
-RUN yarn install
+RUN yarn install --frozen-lockfile
 
 # Copy over application files
 COPY --chown=node:node . .
@@ -30,7 +30,7 @@ ENV BUILD_VERSION=${BUILD_VERSION}
 ENV NODE_ENV=${ENV}
 
 # If this is a prod environment, package the code
-RUN if [ "$ENV" != "local" ]; then yarn build; fi
+RUN if [ "$ENV" != "local" ]; then node --run build; fi
 
 # Start the service
 CMD ["bash", "./start-service"]

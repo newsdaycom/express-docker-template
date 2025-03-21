@@ -2,7 +2,7 @@
 
 import express from 'express';
 import cookieParser from 'cookie-parser';
-// import logger from 'morgan';
+import morgan from 'morgan';
 import apiRouter from './routes/api';
 import api_headers from './lib/api_headers';
 import api_errors from './lib/api_errors';
@@ -10,8 +10,7 @@ import logger from './lib/logger';
 
 const app = express();
 
-// this does not work, app.use is meant to be used with express js middleware, which logger.info is not
-// app.use(logger.info);
+app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());

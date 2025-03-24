@@ -1,5 +1,5 @@
 if [[ $ENV == "local" ]]; then
-    yarn dev
+    node --run dev
 else
-    yarn start
+    node --run start
 fi

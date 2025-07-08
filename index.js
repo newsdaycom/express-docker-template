@@ -3,10 +3,10 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
-import apiRouter from './routes/api';
-import api_headers from './lib/api_headers';
-import api_errors from './lib/api_errors';
-import logger from './lib/logger';
+import apiRouter from './routes/api.js';
+import api_headers from './lib/api_headers.js';
+import api_errors from './lib/api_errors.js';
+import logger from './lib/logger.js';
 
 const app = express();
 

@@ -270,6 +270,7 @@ export default [
       'es-x/no-regexp-s-flag': 'error',
       'es-x/no-regexp-unicode-property-escapes': 'error',
       'import/export': 'error',
+      'import/extensions': ['error', 'always'],
       'import/first': 'error',
       'import/no-absolute-path': [
         'error',

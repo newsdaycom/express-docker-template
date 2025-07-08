@@ -4,12 +4,6 @@ const NodemonPlugin = require('nodemon-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const NodeExternals = require('webpack-node-externals');
 
-const pure_funcs = [];
-
-if (process.env.ENV === 'prod') {
-  pure_funcs.push('console.log');
-}
-
 module.exports = {
   entry: ['./'],
   target: 'node',
@@ -20,13 +14,6 @@ module.exports = {
   },
   externals: [NodeExternals()],
   devtool: 'inline-source-map',
-  devServer: {
-    port: 3888, // default: 8080
-    open: true, // open page in browser
-    static: {
-      directory: path.join(__dirname, 'public')
-    }
-  },
   module: {
     rules: [
       {
@@ -42,10 +29,10 @@ module.exports = {
       new TerserPlugin({
         test: /\.(m|c)?(js)$/,
         extractComments: true,
-        parallel: true,
         terserOptions: {
           compress: {
-            pure_funcs
+            ecma: '2024',
+            drop_console: process.env.ENV === 'prod'
           }
         }
       })

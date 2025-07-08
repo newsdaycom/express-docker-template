@@ -1,15 +1,15 @@
-const path = require('path');
-const ESLintLoader = require('eslint-webpack-plugin');
-const NodemonPlugin = require('nodemon-webpack-plugin');
-const TerserPlugin = require('terser-webpack-plugin');
-const NodeExternals = require('webpack-node-externals');
+import path from 'node:path';
+import ESLintLoader from 'eslint-webpack-plugin';
+import NodemonPlugin from 'nodemon-webpack-plugin';
+import TerserPlugin from 'terser-webpack-plugin';
+import NodeExternals from 'webpack-node-externals';
 
-module.exports = {
+export default {
   entry: ['./'],
   target: 'node',
   output: {
     filename: 'server.js',
-    path: path.resolve(__dirname, 'bin'),
+    path: path.resolve(import.meta.dirname, 'bin'),
     publicPath: '/bin/'
   },
   externals: [NodeExternals()],

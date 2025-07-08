@@ -2,6 +2,7 @@
   "name": "express-docker-template",
   "version": "2.3.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "npx eslint --fix .; npx webpack watch --mode development",
     "build": "echo 'Building production pack'; npx eslint .; npx webpack --mode production",

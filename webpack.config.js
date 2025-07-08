@@ -7,6 +7,7 @@ import NodeExternals from 'webpack-node-externals';
 export default {
   entry: ['./'],
   target: 'node',
+  // to have webpack emit esm, need to change options at both top level of this config and config for NodeExternals
   output: {
     filename: 'server.js',
     path: path.resolve(import.meta.dirname, 'bin'),

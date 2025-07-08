@@ -13,6 +13,7 @@ export default {
     path: path.resolve(import.meta.dirname, 'bin'),
     publicPath: '/bin/'
   },
+  externalsPresets: { node: true },
   externals: [NodeExternals()],
   devtool: 'inline-source-map',
   module: {

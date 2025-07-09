@@ -9,7 +9,7 @@ export default {
   target: 'node',
   // to have webpack emit esm, need to change options at both top level of this config and config for NodeExternals
   output: {
-    filename: 'server.js',
+    filename: 'server.cjs',
     path: path.resolve(import.meta.dirname, 'bin'),
     publicPath: '/bin/'
   },
@@ -49,7 +49,7 @@ export default {
     new NodemonPlugin({
       // If using more than one entry, you can specify
       // which output file will be restarted.
-      script: './bin/server.js',
+      script: './bin/server.cjs',
 
       // What to watch.
       watch: path.resolve('./bin'),

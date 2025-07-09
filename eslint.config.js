@@ -1,11 +1,9 @@
 /* eslint-disable import/no-extraneous-dependencies */
-
-import node from 'eslint-plugin-node';
+import n from 'eslint-plugin-n';
 import promise from 'eslint-plugin-promise';
 import proposal from 'eslint-plugin-proposal';
-import es from 'eslint-plugin-es';
+import pluginESx from 'eslint-plugin-es-x';
 import impprtRules from 'eslint-plugin-import';
-import { fixupPluginRules } from '@eslint/compat';
 import globals from 'globals';
 import babelParser from '@babel/eslint-parser';
 import path from 'node:path';
@@ -33,9 +31,9 @@ export default [
   ),
   {
     plugins: {
-      es: fixupPluginRules(es),
+      'es-x': pluginESx,
       impprtRules,
-      node: fixupPluginRules(node),
+      n,
       promise,
       proposal
     },
@@ -53,7 +51,7 @@ export default [
       },
 
       parser: babelParser,
-      ecmaVersion: 2020,
+      ecmaVersion: 2024,
       sourceType: 'module',
 
       parserOptions: {
@@ -265,13 +263,14 @@ export default [
         }
       ],
       yoda: ['error', 'never'],
-      'es/no-async-iteration': 'error',
-      'es/no-malformed-template-literals': 'error',
-      'es/no-regexp-lookbehind-assertions': 'error',
-      'es/no-regexp-named-capture-groups': 'error',
-      'es/no-regexp-s-flag': 'error',
-      'es/no-regexp-unicode-property-escapes': 'error',
+      'es-x/no-async-iteration': 'error',
+      'es-x/no-malformed-template-literals': 'error',
+      'es-x/no-regexp-lookbehind-assertions': 'error',
+      'es-x/no-regexp-named-capture-groups': 'error',
+      'es-x/no-regexp-s-flag': 'error',
+      'es-x/no-regexp-unicode-property-escapes': 'error',
       'import/export': 'error',
+      'import/extensions': ['error', 'always'],
       'import/first': 'error',
       'import/no-absolute-path': [
         'error',
@@ -284,8 +283,8 @@ export default [
       'import/no-duplicates': 'error',
       'import/no-named-default': 'error',
       'import/no-webpack-loader-syntax': 'error',
-      'node/no-deprecated-api': 'error',
-      'node/process-exit-as-throw': 'error',
+      'n/no-deprecated-api': 'error',
+      'n/process-exit-as-throw': 'error',
       'promise/param-names': 'error'
     }
   }

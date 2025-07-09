@@ -1,32 +1,21 @@
-const path = require('path');
-const ESLintLoader = require('eslint-webpack-plugin');
-const NodemonPlugin = require('nodemon-webpack-plugin');
-const TerserPlugin = require('terser-webpack-plugin');
-const NodeExternals = require('webpack-node-externals');
+import path from 'node:path';
+import ESLintLoader from 'eslint-webpack-plugin';
+import NodemonPlugin from 'nodemon-webpack-plugin';
+import TerserPlugin from 'terser-webpack-plugin';
+import NodeExternals from 'webpack-node-externals';
 
-const pure_funcs = [];
-
-if (process.env.ENV === 'prod') {
-  pure_funcs.push('console.log');
-}
-
-module.exports = {
+export default {
   entry: ['./'],
   target: 'node',
+  // to have webpack emit esm, need to change options at both top level of this config and config for NodeExternals
   output: {
-    filename: 'server.js',
-    path: path.resolve(__dirname, 'bin'),
+    filename: 'server.cjs',
+    path: path.resolve(import.meta.dirname, 'bin'),
     publicPath: '/bin/'
   },
+  externalsPresets: { node: true },
   externals: [NodeExternals()],
   devtool: 'inline-source-map',
-  devServer: {
-    port: 3888, // default: 8080
-    open: true, // open page in browser
-    static: {
-      directory: path.join(__dirname, 'public')
-    }
-  },
   module: {
     rules: [
       {
@@ -42,10 +31,10 @@ module.exports = {
       new TerserPlugin({
         test: /\.(m|c)?(js)$/,
         extractComments: true,
-        parallel: true,
         terserOptions: {
           compress: {
-            pure_funcs
+            ecma: '2024',
+            drop_console: process.env.ENV === 'prod'
           }
         }
       })
@@ -60,7 +49,7 @@ module.exports = {
     new NodemonPlugin({
       // If using more than one entry, you can specify
       // which output file will be restarted.
-      script: './bin/server.js',
+      script: './bin/server.cjs',
 
       // What to watch.
       watch: path.resolve('./bin'),

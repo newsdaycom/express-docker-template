@@ -7,7 +7,8 @@
     "dev": "npx eslint --fix .; npx webpack watch --mode development",
     "build": "echo 'Building production pack'; npx eslint .; npx webpack --mode production",
     "start": "node ./bin/server.cjs",
-    "lint:fix": "npx eslint --fix ."
+    "lint:fix": "npx eslint --fix .",
+    "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
     "cookie-parser": "^1.4.7",

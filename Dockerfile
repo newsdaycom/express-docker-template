@@ -1,5 +1,10 @@
 FROM node:22-bookworm-slim
 
+
+# install pnpm
+RUN npm i -g pnpm@10
+
+
 # Set up directories in advance so we can control the permissions
 RUN mkdir -p /usr/app/bin && mkdir -p /usr/app/node_modules && chown -R node:node /usr/app
 
@@ -13,10 +18,14 @@ USER node
 
 # Copy over the dependencies
 COPY --chown=node:node package.json .
-COPY --chown=node:node yarn.lock .
+COPY --chown=node:node pnpm-lock.yaml .
+COPY --chown=node:node .npmrc .
+
+# fetch dependencies to content addressable store
+RUN pnpm fetch
 
 # Install the dependencies
-RUN yarn install --frozen-lockfile
+RUN pnpm install --offline --frozen-lockfile
 
 # Copy over application files
 COPY --chown=node:node . .

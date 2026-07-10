@@ -1,23 +1,44 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+#
+# Purpose:
+#   Build and push a timestamped Docker image for a generated Express service.
+#
+# Usage:
+#   ENV=production bash ./build-image
+#
+# Environment:
+#   ENV is passed into the Docker build so the image can run the correct build
+#   path. REPO_NAME must be replaced with the generated service's image repo
+#   before the first deployment.
+#
+# Side Effects:
+#   Builds a Docker image, waits briefly, and pushes the tag to the configured
+#   image repository.
+set -euo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-cd $DIR
+cd "$DIR"
 
-## Set repo name and tag
+# Require the environment name up front so accidental unset builds fail before
+# creating or pushing an incorrectly labeled image.
+: "${ENV:?ENV must be set before building an image}"
+
+# Set the generated service image repository and unique image tag.
 REPO_NAME="DOCKERHUBUSER/REPO_NAME"
-BRANCH=`git branch | grep '^*' | sed 's/* //'`
+BRANCH="$(git branch | grep '^*' | sed 's/* //')"
 TAG="build-$BRANCH-$(date '+%Y%m%d%H%M%S')"
 
-## Build the image using the repo name, tag and passing in the env var and build version
-docker build -t "$REPO_NAME:$TAG" --build-arg ENV=$ENV --build-arg TARGETENV=$ENV --build-arg BUILD_VERSION=$TAG .
+# Build the image with the environment and build version embedded as Docker
+# build arguments for runtime headers and startup decisions.
+docker build -t "$REPO_NAME:$TAG" --build-arg ENV="$ENV" --build-arg TARGETENV="$ENV" --build-arg BUILD_VERSION="$TAG" .
 
-## wait 10 seconds
+# Give Docker Hub a short pause before pushing in environments where the daemon
+# needs time to settle after a build.
 sleep 10
 
-## push the image to docker hub
+# Push the generated tag to the configured image repository.
 docker push "$REPO_NAME:$TAG"
 
-## Let us know we're good
+# Print the immutable image reference for deployment notes and handoff messages.
 echo "BUILD COMPLETE: $REPO_NAME:$TAG"

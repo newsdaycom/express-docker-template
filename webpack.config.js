@@ -1,3 +1,20 @@
+/**
+ * Webpack build configuration for the Express Docker template.
+ *
+ * Purpose:
+ *   Bundles the Node entry point into `bin/server.js`, applies Babel and ESLint
+ *   during development/builds, and restarts the local Node process through
+ *   nodemon when webpack watch mode writes a new bundle.
+ *
+ * Environment:
+ *   ENV=prod removes `console.log` calls from production bundles. ENV=local
+ *   keeps the bundle unminified for easier debugging.
+ *
+ * Side Effects:
+ *   Writes build artifacts to `bin/` and may start a nodemon-managed server in
+ *   development mode.
+ */
+
 const path = require('path');
 const ESLintLoader = require('eslint-webpack-plugin');
 const NodemonPlugin = require('nodemon-webpack-plugin');
@@ -6,10 +23,19 @@ const NodeExternals = require('webpack-node-externals');
 
 const pure_funcs = [];
 
+/**
+ * Drop ad hoc console logging from production bundles while preserving warning
+ * and error behavior configured by the logger.
+ */
 if (process.env.ENV === 'prod') {
   pure_funcs.push('console.log');
 }
 
+/**
+ * Webpack configuration consumed by `node --run dev` and `node --run build`.
+ *
+ * @type {import('webpack').Configuration}
+ */
 module.exports = {
   entry: ['./'],
   target: 'node',

@@ -1,27 +1,76 @@
-# Newsday ExpressJS/Docker template
+# Newsday Express Docker Template
 
-Microservices are becoming the name of the game. Much what we are building are API-only microservices. Here's a template to get started quickly!
+This repository is a reusable starter template for Newsday API-style Express services that run in Docker. It provides a minimal Express app, shared API headers and error handling, structured logging, webpack packaging, local Compose workflow, and starter documentation that should be renamed and narrowed when a real service is created.
 
-## Getting started
+## Requirements
 
-Search and replace `express-docker-template` with the name of your service (slugified). Then run `bash ./rebuild` to start up. Then begin development!
+- Node.js 22 for parity with `Dockerfile`.
+- Yarn, using the committed `yarn.lock`.
+- Docker and Docker Compose.
+- A local Docker network named `special-projects` for the default Compose workflow.
 
-## File descriptions
+## Quick Start
 
-**build-image** | This script will bake a fresh docker image with all of your code and push it to docker hub using the current timestamp as a tag. Modify this file to reflect the username/repo_name of your image's repo and it will do the rest
+```bash
+export ENV=local
+docker network create special-projects 2>/dev/null || true
+bash ./rebuild
+```
 
-**rebuild** | Helpful for rebuilding your docker container locally to rule out issues with missing packages or scrambled mounts due to branch changes.
+The service listens on port `3000` inside the container. The starter API response is mounted at `/api`, and the root route returns a simple readiness page.
 
-## To access your microservice
+## Common Commands
 
-One of two ways to do this is to add an `nginx` rule to the `local.tools.newsday.com.conf` (assuming the microservice lives in `devsign/tools` file in the nginx `sites-available` directory).
+```bash
+npx eslint .
+npx eslint --fix .
+node --run build
+node --run start
+ENV=local bash ./start-service
+ENV=local bash ./rebuild
+ENV=production bash ./build-image
+```
 
-1. Go to the `sites-available` directory located in `<your virtual_machines directory->/proxy/nginx-config/`
-2. Open the file `local.tools.newsday.com.conf` in your preferred text editor.
+`package.json` does not currently define a test command. Generated services should add a test runner before they grow real behavior, then document that command in `docs/testing.md`.
 
-   To open the file in `nano` for example use the command `nano local.tools.newsday.conf`
+## Configuration
 
-3. Inside the file you will find various rules for different microservices that follow a similar format. Use the format below to add an additional rule for your microservice, note the braces mark the rule blocks so ensure your rule isn't placed inside another rule block.
+| Variable | Required | Default | Purpose |
+| --- | --- | --- | --- |
+| `ENV` | Yes | None | Controls local versus packaged startup and Docker build mode. Use `local` for development and `production` for deployed runtime. |
+| `BUILD_VERSION` | No | `local-build` in Compose | Exposed through the `x-build-version` API response header. |
+| `NODE_ENV` | No | `${ENV}` in Compose | Standard Node environment value. |
+| `NODE_OPTIONS` | No | `--enable-source-maps` in Compose | Enables useful stack traces from bundled code. |
+| `LOG_LEVEL` | No | `info` | Minimum Winston log severity. |
+| `LOG_PRETTY` | No | `on` in Compose | Enables local pretty logging. |
+
+## Repository Structure
+
+| Path | Purpose |
+| --- | --- |
+| `index.js` | Express application entry point and HTTP listener. |
+| `routes/api.js` | Starter `/api` router. |
+| `lib/api_headers.js` | Shared JSON, cache, build-version, and Newsday CORS headers. |
+| `lib/api_errors.js` | Shared JSON error response middleware. |
+| `lib/logger.mjs` | Shared Winston logger. |
+| `lib/sqs_poller.js` | Optional SQS polling helper for generated queue consumers. |
+| `webpack.config.js` | Node bundle, lint, minification, and nodemon watch configuration. |
+| `Dockerfile` | Production-ready Node image definition. |
+| `docker-compose.yaml` | Local Compose service definition. |
+| `build-image` | Timestamped image build and push script. |
+| `rebuild` | Local rebuild/recreate/log-follow helper. |
+| `start-service` | Local watch versus packaged startup selector. |
+| `docs/` | Durable architecture, configuration, development, operations, testing, and API notes. |
+
+## Creating A Real Service
+
+Search for `express-docker-template`, `DOCKERHUBUSER/REPO_NAME`, and `local-build`, then replace every inherited placeholder that is no longer accurate. Remove starter routes, optional helpers, dependencies, and docs sections that do not apply to the generated service.
+
+Before first handoff, run the documented quick start, Docker build, startup path, lint command, and baseline tests. Update this README and `docs/` with the exact commands that passed.
+
+## Local Proxy Access
+
+In the Newsday local proxy environment, add a route to `local.tools.newsday.com.conf` that points at the Compose hostname for the generated service:
 
 ```nginx
 location ~ /<preferred URL for microservice>(.*) {
@@ -31,6 +80,15 @@ location ~ /<preferred URL for microservice>(.*) {
 }
 ```
 
-where `hostname` is the `hostname` for your microservice as defined in its `docker-compose.yaml` file. 4. Save, exit and then restart Docker (one is to click the docker icon in the menu bar on the tip and click "Restart").
+Restart the local proxy/Docker environment after changing the nginx config, run `ENV=local bash ./rebuild`, then visit the configured local URL.
 
-Ensure your microservice is running (execute the `bash rebuild` command) then navigate to `local.tools.newsday.com/<your microservice endpoint>` and you should be able to see some message indicating the microservice is online.
+## Troubleshooting
+
+- Missing `special-projects` network: run `docker network create special-projects`.
+- Missing `ENV`: export `ENV=local` before `rebuild` or `start-service`.
+- Dependency mismatch: run `ENV=local bash ./rebuild` so dependencies install inside the image.
+- Build or lint failure: run `npx eslint .` first, then `node --run build` for the webpack path.
+
+## Ownership
+
+This template is intended for Newsday service teams. Generated projects should replace this section with the real owner, support path, and project-specific runbooks.

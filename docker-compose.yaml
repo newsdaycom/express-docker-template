@@ -1,20 +1,42 @@
-## Search and replace 'express-docker-template' with the name of the service
+# Purpose:
+#   Local Docker Compose runtime for services generated from this Express
+#   template.
+#
+# Usage:
+#   Set ENV=local and run `bash ./rebuild` to rebuild the image, recreate the
+#   container, and follow logs.
+#
+# Operational Notes:
+#   Replace all `express-docker-template` values when creating a real service.
+#   The external `special-projects` network is expected to exist in the local
+#   Newsday Docker environment.
 
 services:
   express-docker-template:
+    # Container identity should match the generated service slug.
     container_name: express-docker-template
     hostname: express-docker-template
     volumes:
+      # Bind source for local watch mode while keeping container-owned
+      # dependency and bundle directories isolated from the host.
       - .:/usr/app
       - /usr/app/node_modules
       - /usr/app/bin
     build:
       context: .
     environment:
+      # ENV controls start-service behavior and webpack build mode.
       - ENV
-      - BUILD_VERSION=local-build # DO NOT SPECIFY WHEN DEPLOYING TO STAGE
-      - NODE_ENV=${ENV} # CAN ONLY BE 'local' OR 'production', hardcode to 'production' WHEN DEPLOYING TO STAGE AND PROD
+      # BUILD_VERSION is omitted in deployed environments so image build args can
+      # supply the real deploy tag.
+      - BUILD_VERSION=local-build
+      # NODE_ENV should be local for template development and production for
+      # stage/prod deployments.
+      - NODE_ENV=${ENV}
+      # Source maps make container stack traces point back to source files.
       - NODE_OPTIONS=--enable-source-maps
+      # Logging defaults are safe for local development and can be overridden by
+      # generated services.
       - LOG_LEVEL=info
       - LOG_PRETTY=on
     logging:

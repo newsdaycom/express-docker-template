@@ -1,2 +1,6 @@
+# Purpose:
+#   Keep host-only dependencies and generated bundles out of Docker build
+#   context. The image installs dependencies and writes bundles inside the
+#   container so host state cannot leak into builds.
 node_modules
 bin

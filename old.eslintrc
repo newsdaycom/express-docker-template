@@ -1,3 +1,8 @@
+// Purpose:
+//   Preserve the pre-flat ESLint configuration as a migration reference for
+//   generated services or older tooling that has not moved to eslint.config.mjs.
+// Operational Notes:
+//   The active lint configuration is eslint.config.mjs.
 {
   "parser": "@babel/eslint-parser",
   "parserOptions": {

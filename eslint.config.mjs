@@ -1,3 +1,14 @@
+/**
+ * Flat ESLint configuration for the Express Docker template.
+ *
+ * Purpose:
+ *   Applies the shared Newsday JavaScript lint posture to source, route, lib,
+ *   and configuration files while ignoring generated dependencies and bundles.
+ *
+ * Operational Notes:
+ *   This config keeps compatibility with legacy Airbnb/Prettier/plugin presets
+ *   through FlatCompat until the template fully adopts native flat presets.
+ */
 /* eslint-disable import/no-extraneous-dependencies */
 
 import node from 'eslint-plugin-node';
@@ -15,12 +26,23 @@ import { FlatCompat } from '@eslint/eslintrc';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+/**
+ * Adapter for legacy `extends` entries in a flat config file.
+ *
+ * @type {FlatCompat}
+ */
 const compat = new FlatCompat({
   baseDirectory: __dirname,
   recommendedConfig: js.configs.recommended,
   allConfig: js.configs.all
 });
 
+/**
+ * Exported ESLint configuration array consumed by `npx eslint .`.
+ *
+ * @type {import('eslint').Linter.Config[]}
+ */
 export default [
   {
     ignores: ['**/public/', '**/node_modules/', '**/bin/']

@@ -1,5 +1,24 @@
-if [[ $ENV == "local" ]]; then
-    node --run dev
+#!/usr/bin/env bash
+#
+# Purpose:
+#   Start the Express service in local watch mode or packaged runtime mode.
+#
+# Usage:
+#   ENV=local bash ./start-service
+#   ENV=production bash ./start-service
+#
+# Environment:
+#   ENV=local runs webpack in watch mode with nodemon. Any other value runs the
+#   prebuilt server bundle from `bin/server.js`.
+#
+# Side Effects:
+#   Starts the Node development watcher or the packaged Node server process.
+set -euo pipefail
+
+: "${ENV:?ENV must be set before starting the service}"
+
+if [[ "$ENV" == "local" ]]; then
+  node --run dev
 else
-    node --run start
+  node --run start
 fi

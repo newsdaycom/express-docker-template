@@ -1,27 +1,38 @@
+# Purpose:
+#   Build a reproducible Node.js container for services generated from this
+#   Express template.
+#
+# Inputs:
+#   BUILD_VERSION identifies the image/application version exposed by API
+#   headers. ENV controls local versus packaged runtime behavior.
+#
+# Side Effects:
+#   Installs Yarn dependencies, optionally builds the production bundle, and
+#   starts the service through ./start-service.
 FROM node:22-bookworm-slim
 
-# Set up directories in advance so we can control the permissions
+# Set up writable application directories before dropping to the non-root user.
 RUN mkdir -p /usr/app/bin && mkdir -p /usr/app/node_modules && chown -R node:node /usr/app
 
-# Set the work directory
+# Run all following commands from the application root inside the image.
 WORKDIR /usr/app
 
-# Set the user
+# Keep image runtime behavior aligned with least-privilege container defaults.
 USER node
 
-## Dependencies are handled in their own layer so that we can leverage layer cache and save time on rebuild
+# Dependencies live in their own layer so rebuilds can reuse the install cache
+# when only application source files change.
 
-# Copy over the dependencies
 COPY --chown=node:node package.json .
 COPY --chown=node:node yarn.lock .
 
-# Install the dependencies
 RUN yarn install --frozen-lockfile
 
-# Copy over application files
+# Copy source after dependency installation to preserve the dependency layer.
 COPY --chown=node:node . .
 
-# Set ARGs and ENV vars
+# Build arguments become runtime environment values so routes and logs can
+# expose deployment context without hardcoding environment-specific settings.
 ARG BUILD_VERSION
 ARG ENV
 
@@ -29,8 +40,8 @@ ENV ENV=${ENV}
 ENV BUILD_VERSION=${BUILD_VERSION}
 ENV NODE_ENV=${ENV}
 
-# If this is a prod environment, package the code
+# Non-local images run the webpack production build during image creation.
 RUN if [ "$ENV" != "local" ]; then node --run build; fi
 
-# Start the service
+# Delegate local versus packaged startup behavior to the template script.
 CMD ["bash", "./start-service"]

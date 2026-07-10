@@ -1,3 +1,6 @@
+# Purpose:
+#   Exclude generated, dependency, and legacy bundle outputs from formatter
+#   changes so template formatting stays focused on source and docs.
 public/
 node_modules/
 server.js

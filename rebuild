@@ -1,6 +1,24 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
+# Purpose:
+#   Rebuild and restart the local Docker Compose service for template
+#   development or for a generated service.
+#
+# Usage:
+#   ENV=local bash ./rebuild
+#
+# Environment:
+#   ENV is passed to the Docker build and controls local startup behavior.
+#
+# Side Effects:
+#   Rebuilds the image, stops/removes the current container, starts a new
+#   container, and follows container logs.
+set -euo pipefail
 
-docker compose build --build-arg ENV=$ENV
+# Fail fast before Compose starts if the caller forgot the environment name.
+: "${ENV:?ENV must be set before rebuilding the local service}"
+
+docker compose build --build-arg ENV="$ENV"
 docker compose stop
 docker compose rm -f
 docker compose up -d

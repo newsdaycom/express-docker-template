@@ -16,6 +16,7 @@ import {
   RedisStreamConsumer,
   RedisStreamProducer,
   parseStreamEntry,
+  sendRedisCommand,
   streamKey
 } from '../lib/redis_streams.mjs';
 
@@ -39,6 +40,44 @@ test('producer writes JSON payloads with XADD', async () => {
   assert.equal(id, '1-0');
   assert.deepEqual(calls, [
     ['jobs', '*', 'payload', '{"contentId":"abc"}', 'source', 'test']
+  ]);
+});
+
+test('sendRedisCommand supports sendCommand-only clients', async () => {
+  const calls = [];
+  const client = {
+    async sendCommand(args) {
+      calls.push(args);
+      return '1-0';
+    }
+  };
+
+  const result = await sendRedisCommand(client, 'xadd', 'XADD', [
+    'jobs',
+    '*',
+    'payload',
+    '{"ok":true}'
+  ]);
+
+  assert.equal(result, '1-0');
+  assert.deepEqual(calls, [['XADD', 'jobs', '*', 'payload', '{"ok":true}']]);
+});
+
+test('producer falls back to sendCommand when xadd is unavailable', async () => {
+  const calls = [];
+  const client = {
+    async sendCommand(args) {
+      calls.push(args);
+      return '2-0';
+    }
+  };
+  const producer = new RedisStreamProducer({ client, stream: 'jobs' });
+
+  const id = await producer.publish({ contentId: 'abc' });
+
+  assert.equal(id, '2-0');
+  assert.deepEqual(calls, [
+    ['XADD', 'jobs', '*', 'payload', '{"contentId":"abc"}']
   ]);
 });
 
@@ -117,6 +156,43 @@ test('consumer parses XREADGROUP responses', async () => {
       ['5-0', 'second']
     ]
   );
+});
+
+test('consumer read falls back to sendCommand when xreadgroup is unavailable', async () => {
+  const calls = [];
+  const client = {
+    async sendCommand(args) {
+      calls.push(args);
+      return [['jobs', [['8-0', ['payload', '{"name":"fallback"}']]]]];
+    }
+  };
+  const consumer = new RedisStreamConsumer({
+    client,
+    stream: 'jobs',
+    group: 'workers',
+    consumer: 'worker-1',
+    blockMs: 10,
+    batchSize: 1
+  });
+
+  const messages = await consumer.read();
+
+  assert.equal(messages[0].payload.name, 'fallback');
+  assert.deepEqual(calls, [
+    [
+      'XREADGROUP',
+      'GROUP',
+      'workers',
+      'worker-1',
+      'COUNT',
+      '1',
+      'BLOCK',
+      '10',
+      'STREAMS',
+      'jobs',
+      '>'
+    ]
+  ]);
 });
 
 test('consumer recovers pending messages with XAUTOCLAIM when available', async () => {

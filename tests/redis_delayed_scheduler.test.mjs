@@ -149,6 +149,47 @@ test('promoteDue locks, publishes, removes, and reports due records', async () =
   assert.deepEqual(client.sortedSets.get('scheduled'), []);
 });
 
+test('promoteDue falls back to sendCommand for sorted set and stream commands', async () => {
+  const calls = [];
+  const serialized = serializeDelayedRecord({
+    targetStream: 'jobs',
+    payload: { ok: true },
+    dueAt: 1000,
+    idempotencyKey: 'key-1'
+  });
+  const client = {
+    async sendCommand(args) {
+      calls.push(args);
+      if (args[0] === 'ZRANGEBYSCORE') {
+        return [serialized];
+      }
+      if (args[0] === 'XADD') {
+        return '1-0';
+      }
+      return 1;
+    },
+    async set() {
+      return 'OK';
+    },
+    async del() {
+      return 1;
+    }
+  };
+  const scheduler = new RedisDelayedScheduler({
+    client,
+    scheduledSet: 'scheduled'
+  });
+
+  const promoted = await scheduler.promoteDue(1000);
+
+  assert.deepEqual(promoted, [{ idempotencyKey: 'key-1', streamId: '1-0' }]);
+  assert.deepEqual(calls, [
+    ['ZRANGEBYSCORE', 'scheduled', '-inf', '1000', 'LIMIT', '0', '100'],
+    ['XADD', 'jobs', '*', 'payload', '{"ok":true}', 'idempotencyKey', 'key-1'],
+    ['ZREM', 'scheduled', serialized]
+  ]);
+});
+
 test('serializeDelayedRecord preserves caller-supplied idempotency keys', () => {
   const serialized = serializeDelayedRecord({
     targetStream: 'jobs',

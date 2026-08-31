@@ -18,6 +18,7 @@ bash ./rebuild
 
 ```bash
 npx eslint .
+yarn test
 npx eslint --fix .
 ```
 
@@ -43,5 +44,6 @@ When creating a real service:
 - Rename `express-docker-template` placeholders.
 - Replace `DOCKERHUBUSER/REPO_NAME` in `build-image`.
 - Replace the starter `/api` route with the real contract.
-- Delete `lib/sqs_poller.js` if the service does not consume SQS.
+- Keep `lib/redis_streams.mjs` and `lib/redis_delayed_scheduler.mjs` for queue services, then rename stream keys, consumer groups, and delayed sorted-set names.
+- Delete `lib/sqs_poller.js` unless the service is temporarily draining old SQS messages.
 - Update README and `docs/` with real commands, owners, ports, routes, and deployment details.

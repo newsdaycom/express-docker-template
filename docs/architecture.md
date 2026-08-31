@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This template starts a small Express service that can be copied into API-style Newsday microservices. The default runtime is intentionally thin: one HTTP entry point, one starter router, shared response headers, shared error handling, and structured logging.
+This template starts a small Express service that can be copied into API-style Newsday microservices. The default runtime is intentionally thin: one HTTP entry point, one starter router, shared response headers, shared error handling, structured logging, and reusable Redis Streams/Valkey helpers for queue-oriented services.
 
 ## Runtime Flow
 
@@ -18,13 +18,15 @@ This template starts a small Express service that can be copied into API-style N
 - `lib/api_headers.js` centralizes JSON content, cache, build-version, and Newsday-origin CORS headers.
 - `lib/api_errors.js` centralizes the JSON error envelope.
 - `lib/logger.mjs` configures a Winston console logger for container-friendly output.
-- `lib/sqs_poller.js` is optional starter code for generated services that consume SQS messages.
+- `lib/redis_streams.mjs` is the preferred producer/consumer abstraction for Redis Streams and Valkey. It publishes JSON payloads, creates consumer groups idempotently, reads with `XREADGROUP`, acknowledges with `XACK`, and recovers pending entries with `XAUTOCLAIM` or an `XPENDING`/`XCLAIM` fallback.
+- `lib/redis_delayed_scheduler.mjs` stores delayed jobs in a sorted set, uses due timestamps as scores, claims records with short-lived locks, and promotes due jobs into target streams.
+- `lib/sqs_poller.js` is legacy/drain-only starter code for generated services that still need to empty old SQS queues during migrations.
 
 ## Docker Shape
 
 The image uses `node:22-bookworm-slim`, installs dependencies with Yarn, copies the application, and runs `./start-service`. Non-local builds run webpack during image creation so deployed containers can start `bin/server.js`.
 
-The local Compose file bind-mounts the repository into `/usr/app`, while keeping `/usr/app/node_modules` and `/usr/app/bin` container-owned. This avoids host dependency drift while preserving local edit/watch behavior.
+The local Compose file bind-mounts the repository into `/usr/app`, while keeping `/usr/app/node_modules` and `/usr/app/bin` container-owned. This avoids host dependency drift while preserving local edit/watch behavior. Compose also runs a local Redis container with an insecure local-only URL. Stage and production should inject secure Valkey URLs through `REDIS_URL`.
 
 ## Template Boundaries
 

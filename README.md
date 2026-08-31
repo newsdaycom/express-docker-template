@@ -1,6 +1,6 @@
 # Newsday Express Docker Template
 
-This repository is a reusable starter template for Newsday API-style Express services that run in Docker. It provides a minimal Express app, shared API headers and error handling, structured logging, webpack packaging, local Compose workflow, and starter documentation that should be renamed and narrowed when a real service is created.
+This repository is a reusable starter template for Newsday API-style Express services that run in Docker. It provides a minimal Express app, shared API headers and error handling, structured logging, Redis Streams/Valkey queue helpers, webpack packaging, local Compose workflow, and starter documentation that should be renamed and narrowed when a real service is created.
 
 ## Requirements
 
@@ -19,10 +19,13 @@ bash ./rebuild
 
 The service listens on port `3000` inside the container. The starter API response is mounted at `/api`, and the root route returns a simple readiness page.
 
+The Compose file also starts a local Redis container for Redis Streams development. The local default is `redis://redis:6379`; deployed stage and production services must receive secure `rediss://` Valkey connection strings through environment variables.
+
 ## Common Commands
 
 ```bash
 npx eslint .
+yarn test
 npx eslint --fix .
 node --run build
 node --run start
@@ -31,7 +34,7 @@ ENV=local bash ./rebuild
 ENV=production bash ./build-image
 ```
 
-`package.json` does not currently define a test command. Generated services should add a test runner before they grow real behavior, then document that command in `docs/testing.md`.
+`yarn test` runs the template Redis helper unit tests with Node's built-in test runner. Generated services should extend the test suite as soon as they add real behavior.
 
 ## Configuration
 
@@ -43,6 +46,14 @@ ENV=production bash ./build-image
 | `NODE_OPTIONS` | No | `--enable-source-maps` in Compose | Enables useful stack traces from bundled code. |
 | `LOG_LEVEL` | No | `info` | Minimum Winston log severity. |
 | `LOG_PRETTY` | No | `on` in Compose | Enables local pretty logging. |
+| `REDIS_URL` | Queue services | `redis://redis:6379` in Compose | Redis or Valkey connection URL. Stage/prod should use secure `rediss://` URLs supplied through env vars. |
+| `REDIS_STREAM_PREFIX` | No | `local` in Compose | Optional namespace prefix for stream keys. |
+| `REDIS_CONSUMER_GROUP` | Consumers | `express-docker-template` in Compose | Redis Streams consumer group. |
+| `REDIS_CONSUMER_NAME` | No | `express-docker-template-local` in Compose | Consumer name; helpers can default to hostname and pid. |
+| `REDIS_BLOCK_MS` | No | `5000` in Compose | Blocking read duration for consumers. |
+| `REDIS_BATCH_SIZE` | No | `10` in Compose | Maximum stream messages per read. |
+| `REDIS_PENDING_IDLE_MS` | No | `60000` in Compose | Idle threshold before pending entries are claimed. |
+| `REDIS_SCHEDULED_SET` | Delayed jobs | `local:scheduled-jobs` in Compose | Sorted-set key for delayed stream promotion. |
 
 ## Repository Structure
 
@@ -53,7 +64,9 @@ ENV=production bash ./build-image
 | `lib/api_headers.js` | Shared JSON, cache, build-version, and Newsday CORS headers. |
 | `lib/api_errors.js` | Shared JSON error response middleware. |
 | `lib/logger.mjs` | Shared Winston logger. |
-| `lib/sqs_poller.js` | Optional SQS polling helper for generated queue consumers. |
+| `lib/redis_streams.mjs` | Preferred Redis Streams/Valkey producer and consumer helpers. |
+| `lib/redis_delayed_scheduler.mjs` | Sorted-set delayed job scheduler for stream promotion. |
+| `lib/sqs_poller.js` | Legacy/drain-only SQS polling helper for generated services that must drain old queues. |
 | `webpack.config.js` | Node bundle, lint, minification, and nodemon watch configuration. |
 | `Dockerfile` | Production-ready Node image definition. |
 | `docker-compose.yaml` | Local Compose service definition. |
@@ -88,6 +101,7 @@ Restart the local proxy/Docker environment after changing the nginx config, run 
 - Missing `ENV`: export `ENV=local` before `rebuild` or `start-service`.
 - Dependency mismatch: run `ENV=local bash ./rebuild` so dependencies install inside the image.
 - Build or lint failure: run `npx eslint .` first, then `node --run build` for the webpack path.
+- Redis connection failure: confirm local Compose is running `redis` and that deployed environments provide `REDIS_URL` as a secure Valkey URL.
 
 ## Ownership
 

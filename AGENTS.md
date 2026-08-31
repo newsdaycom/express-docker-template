@@ -8,6 +8,7 @@ Treat every change as something that may be copied into many future services.
 - Keep the template generic, production-ready, and easy to rename for a new service.
 - Prefer clear conventions over clever shortcuts. A new project should be understandable within a few minutes.
 - Keep Docker, local development, documentation, tests, linting, and runtime behavior in sync.
+- Use Redis Streams/Valkey as the default queue transport for new services. `lib/sqs_poller.js` is legacy/drain-only during migrations.
 - Do not introduce service-specific business logic, secrets, private credentials, or environment-specific values into the template.
 - Preserve unrelated user changes in the working tree.
 
@@ -37,6 +38,7 @@ Revise at minimum:
 - `.env.example` or the project-specific environment documentation so it lists every required local variable with safe example values.
 - `package.json` scripts, dependencies, package metadata, and Node engine assumptions.
 - `index.js`, `routes/`, `lib/`, and any starter code so module names, entry points, JSDoc, and behavior match the real service.
+- Redis stream names, consumer groups, delayed scheduler sets, and secure Valkey connection env vars.
 - `docs/testing.md` and the test tree so lint, unit, integration, Docker, and regression commands reflect the real validation workflow.
 - License, ownership, and security notes if the generated repository uses a different policy than the template.
 

@@ -8,10 +8,11 @@ This document defines the current validation path for the template and the expec
 
 ```bash
 npx eslint .
+yarn test
 node --run build
 ```
 
-The repository does not currently include a unit test runner or a `test` script. Until generated services add behavior beyond the starter routes and middleware, lint and webpack build are the baseline checks.
+`yarn test` uses Node's built-in test runner and currently covers Redis stream publishing, consumer parsing, acknowledgement, pending-message recovery, delayed scheduler due/not-due behavior, and idempotency keys.
 
 ## Generated Service Expectations
 
@@ -21,6 +22,8 @@ Generated services should add tests as soon as they introduce real behavior. Pre
 - Express integration tests for routes, middleware, status codes, headers, and JSON envelopes.
 - Docker startup smoke tests for runtime packaging and environment wiring.
 - Regression tests for fixed bugs, external contracts, queue parsing, or risky integrations.
+
+Redis/Valkey integrations should keep pure unit tests with injected clients, then add Docker or environment-backed smoke tests where service risk warrants it.
 
 ## Regression Battery
 

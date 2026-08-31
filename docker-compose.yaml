@@ -39,11 +39,41 @@ services:
       # generated services.
       - LOG_LEVEL=info
       - LOG_PRETTY=on
+      # Redis Streams local defaults are intentionally insecure and local-only.
+      # Stage/prod deployments must inject secure rediss:// Valkey URLs.
+      - REDIS_URL=redis://redis:6379
+      - REDIS_STREAM_PREFIX=local
+      - REDIS_CONSUMER_GROUP=express-docker-template
+      - REDIS_CONSUMER_NAME=express-docker-template-local
+      - REDIS_BLOCK_MS=5000
+      - REDIS_BATCH_SIZE=10
+      - REDIS_PENDING_IDLE_MS=60000
+      - REDIS_SCHEDULED_SET=local:scheduled-jobs
+    depends_on:
+      redis:
+        condition: service_started
     logging:
       driver: "json-file"
       options:
         max-size: "5m"
         max-file: "2"
+  redis:
+    # Local-only Redis instance used to exercise stream helpers during service
+    # development. Do not mirror this insecure URL into stage or production.
+    image: redis:7-alpine
+    container_name: express-docker-template-redis
+    hostname: redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+volumes:
+  redis-data:
+    # Local Redis persistence for delayed records and stream entries.
 networks:
   default:
     name: special-projects

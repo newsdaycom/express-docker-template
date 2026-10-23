@@ -12,6 +12,13 @@ Treat every change as something that may be copied into many future services.
 - Do not introduce service-specific business logic, secrets, private credentials, or environment-specific values into the template.
 - Preserve unrelated user changes in the working tree.
 
+## Feature Branch Promotion
+
+- Never merge `stage` or `origin/stage` into a feature branch. Feature changes
+  flow into `origin/stage`, never in the reverse direction.
+- Resolve stage integration conflicts on a separate branch based on `origin/stage`.
+  Keep the feature branch based on its release baseline for the release pull request.
+
 ## Commit Message Conventions
 
 Newsday projects use JIRA smart commits for JIRA/GitHub integration. When a branch name starts with a JIRA ticket key, begin commit subjects with that same ticket key and a colon.

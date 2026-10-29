@@ -33,7 +33,7 @@ Revise at minimum:
 - `docs/` files so they describe the real architecture, configuration, development workflow, operations model, testing strategy, and external contracts.
 - `docker-compose.yaml` network, volumes, ports, service dependencies, environment variables, health checks, and logging assumptions.
 - `Dockerfile` runtime dependencies, system packages, startup command, exposed ports, user permissions, and build arguments.
-- `build-image`, `rebuild`, and `start-service` so script names, image repositories, required environment variables, and runtime commands match the real service.
+- `rebuild` and `start-service` so script names, required environment variables, and runtime commands match the real service. In `build-image`, populate only the `REPO_NAME` repository placeholder; every other byte and the executable mode must remain identical to the template.
 - `.env.example` or the project-specific environment documentation so it lists every required local variable with safe example values.
 - `package.json` scripts, dependencies, package metadata, and Node engine assumptions.
 - `index.js`, `routes/`, `lib/`, and any starter code so module names, entry points, JSDoc, and behavior match the real service.

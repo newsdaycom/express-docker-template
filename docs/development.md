@@ -45,3 +45,17 @@ When creating a real service:
 - Replace the starter `/api` route with the real contract.
 - Delete `lib/sqs_poller.js` if the service does not consume SQS.
 - Update README and `docs/` with real commands, owners, ports, routes, and deployment details.
+
+## Standard multi-architecture image builder
+
+Services adopt this template's existing build-image, changing only the image
+identifier. Keep common build logic in the template; developer direction is
+required for other application-specific deviations. One Buildx invocation builds
+linux/amd64 and linux/arm64 together and verifies the published index.
+
+Before committing application build changes, build the uncommitted candidate
+using BUILD_QUALIFICATION=1 with a loopback REPO_NAME or local OCI/load output,
+then execute the resulting ARM64 image under emulation and verify AMD64. Dirty
+candidates carry explicit dirty provenance and are not stage deployment artifacts.
+Commit, push and open the application PR after successful qualification. Clean
+stage deployment publication still uses the recorded origin/stage revision.

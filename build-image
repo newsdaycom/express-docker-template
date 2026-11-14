@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Purpose: build both Linux CPU architectures and publish one verified image index.
+# Purpose: build AMD64 and ARM64 together using the standard template workflow.
+# Production builds/deployments require their separate authorization.
 # Usage: ENV=stage REPO_NAME=newsday/example-service ./build-image
 # Inputs: BUILD_OUTPUT=push (default), oci, or load; BUILD_PLATFORMS defaults to
 # linux/amd64,linux/arm64. OCI requires an absolute BUILD_OUTPUT_PATH outside Git.
-# Stage builds require clean HEAD == origin/stage; BUILD_SOURCE_SHA can pin it.
+# Publication requires clean origin/stage; BUILD_QUALIFICATION=1 permits local candidate testing.
 # Outputs: source SHA and verified registry digest, or an explicit local artifact.
 # Side effects: Buildx builds target-native layers (possibly emulated); push can
 # upload layers/index, oci exports an archive, load imports one local platform.
@@ -17,11 +18,21 @@ fail() { printf 'BUILD FAILED: %s\n' "$*" >&2; exit 1; }
 [[ "$REPO_NAME" != *DOCKERHUBUSER* && "$REPO_NAME" != *REPO_NAME* ]] || fail 'Replace the template image repository'
 SOURCE_SHA="$(git rev-parse HEAD)"
 [[ -z "${BUILD_SOURCE_SHA:-}" || "$BUILD_SOURCE_SHA" == "$SOURCE_SHA" ]] || fail 'BUILD_SOURCE_SHA does not match HEAD'
-[[ -z "$(git status --porcelain --untracked-files=normal)" ]] || fail 'Build from a clean committed checkout'
-if [[ "$ENV" == stage ]]; then
-  STAGE_SHA="$(git rev-parse --verify refs/remotes/origin/stage)" || fail 'Fetch origin/stage before a stage build'
-  [[ "$SOURCE_SHA" == "$STAGE_SHA" ]] || fail 'Stage builds must use the recorded origin/stage revision'
+# Test uncommitted candidates locally before committing or creating a PR.
+QUALIFICATION="${BUILD_QUALIFICATION:-0}"
+DIRTY=false
+[[ -z "$(git status --porcelain --untracked-files=normal)" ]] || DIRTY=true
+if [[ "$QUALIFICATION" == 1 ]]; then
+  if [[ "${BUILD_OUTPUT:-push}" == push ]]; then
+    [[ "$REPO_NAME" == localhost:*/* || "$REPO_NAME" == 127.0.0.1:*/* ]] || fail 'Candidate push is restricted to the local qualification registry'
+  fi
+else
+  [[ "$DIRTY" == false ]] || fail 'Publication requires a clean committed checkout; qualify candidates locally first'
+  if [[ "$ENV" == stage ]]; then
+    [[ "$SOURCE_SHA" == "$(git rev-parse --verify refs/remotes/origin/stage)" ]] || fail 'Stage publication must use origin/stage'
+  fi
 fi
+if [[ "$DIRTY" == true ]]; then SOURCE_SHA="${SOURCE_SHA}-dirty"; fi
 PLATFORMS="${BUILD_PLATFORMS:-linux/amd64,linux/arm64}"
 case "$PLATFORMS" in
   linux/amd64|linux/arm64|linux/amd64,linux/arm64|linux/arm64,linux/amd64) ;;
@@ -35,7 +46,8 @@ REF="${REPO_NAME}:${TAG}"
 docker buildx version >/dev/null
 ARGS=(buildx build --platform "$PLATFORMS" --tag "$REF"
   --build-arg "ENV=$ENV" --build-arg "TARGETENV=$ENV" --build-arg "BUILD_VERSION=$TAG"
-  --label "org.opencontainers.image.revision=$SOURCE_SHA")
+  --label "org.opencontainers.image.revision=$SOURCE_SHA"
+  --label "org.newsday.source.dirty=$DIRTY")
 case "$OUTPUT" in
   push)
     [[ "$PLATFORMS" == *,* ]] || fail 'Publication requires both architectures; local single-platform checks use oci/load'

@@ -30,3 +30,5 @@ The template does not include secrets. Generated services must keep secrets out 
 ## Optional SQS Configuration
 
 `lib/sqs_poller.js` includes placeholder queue URLs keyed by `local`, `stage`, and `prod`. Services that keep this helper must provide real queue URLs through code-level configuration or a documented environment mapping. HTTP-only services should delete the helper and remove any unused dependencies.
+
+Build invocation requires ENV and REPO_NAME; BUILD_SOURCE_SHA optionally pins the source. BUILD_PLATFORMS defaults to linux/amd64,linux/arm64. BUILD_OUTPUT selects push/oci/load; OCI requires BUILD_OUTPUT_PATH. BUILD_TAG may supply a unique Docker tag. See multiarch.md for constraints and deployment provenance.

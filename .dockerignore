@@ -4,3 +4,11 @@
 #   container so host state cannot leak into builds.
 node_modules
 bin
+
+# Keep source control, credentials and host test caches out of all target images.
+.git
+.env
+.env.*
+!.env.example
+__pycache__
+*.pyc

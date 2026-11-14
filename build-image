@@ -1,44 +1,70 @@
 #!/usr/bin/env bash
-#
-# Purpose:
-#   Build and push a timestamped Docker image for a generated Express service.
-#
-# Usage:
-#   ENV=production bash ./build-image
-#
-# Environment:
-#   ENV is passed into the Docker build so the image can run the correct build
-#   path. REPO_NAME must be replaced with the generated service's image repo
-#   before the first deployment.
-#
-# Side Effects:
-#   Builds a Docker image, waits briefly, and pushes the tag to the configured
-#   image repository.
+# Purpose: build both Linux CPU architectures and publish one verified image index.
+# Usage: ENV=stage REPO_NAME=newsday/example-service ./build-image
+# Inputs: BUILD_OUTPUT=push (default), oci, or load; BUILD_PLATFORMS defaults to
+# linux/amd64,linux/arm64. OCI requires an absolute BUILD_OUTPUT_PATH outside Git.
+# Stage builds require clean HEAD == origin/stage; BUILD_SOURCE_SHA can pin it.
+# Outputs: source SHA and verified registry digest, or an explicit local artifact.
+# Side effects: Buildx builds target-native layers (possibly emulated); push can
+# upload layers/index, oci exports an archive, load imports one local platform.
+# A failure never changes a Kubernetes image or reports a completed deployment.
 set -euo pipefail
-
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-
-cd "$DIR"
-
-# Require the environment name up front so accidental unset builds fail before
-# creating or pushing an incorrectly labeled image.
-: "${ENV:?ENV must be set before building an image}"
-
-# Set the generated service image repository and unique image tag.
-REPO_NAME="DOCKERHUBUSER/REPO_NAME"
-BRANCH="$(git branch | grep '^*' | sed 's/* //')"
-TAG="build-$BRANCH-$(date '+%Y%m%d%H%M%S')"
-
-# Build the image with the environment and build version embedded as Docker
-# build arguments for runtime headers and startup decisions.
-docker build -t "$REPO_NAME:$TAG" --build-arg ENV="$ENV" --build-arg TARGETENV="$ENV" --build-arg BUILD_VERSION="$TAG" .
-
-# Give Docker Hub a short pause before pushing in environments where the daemon
-# needs time to settle after a build.
-sleep 10
-
-# Push the generated tag to the configured image repository.
-docker push "$REPO_NAME:$TAG"
-
-# Print the immutable image reference for deployment notes and handoff messages.
-echo "BUILD COMPLETE: $REPO_NAME:$TAG"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+cd "$SCRIPT_DIR"
+: "${ENV:?Set ENV before building}"
+: "${REPO_NAME:?Set REPO_NAME to the service image repository}"
+fail() { printf 'BUILD FAILED: %s\n' "$*" >&2; exit 1; }
+[[ "$REPO_NAME" != *DOCKERHUBUSER* && "$REPO_NAME" != *REPO_NAME* ]] || fail 'Replace the template image repository'
+SOURCE_SHA="$(git rev-parse HEAD)"
+[[ -z "${BUILD_SOURCE_SHA:-}" || "$BUILD_SOURCE_SHA" == "$SOURCE_SHA" ]] || fail 'BUILD_SOURCE_SHA does not match HEAD'
+[[ -z "$(git status --porcelain --untracked-files=normal)" ]] || fail 'Build from a clean committed checkout'
+if [[ "$ENV" == stage ]]; then
+  STAGE_SHA="$(git rev-parse --verify refs/remotes/origin/stage)" || fail 'Fetch origin/stage before a stage build'
+  [[ "$SOURCE_SHA" == "$STAGE_SHA" ]] || fail 'Stage builds must use the recorded origin/stage revision'
+fi
+PLATFORMS="${BUILD_PLATFORMS:-linux/amd64,linux/arm64}"
+case "$PLATFORMS" in
+  linux/amd64|linux/arm64|linux/amd64,linux/arm64|linux/arm64,linux/amd64) ;;
+  *) fail 'Supported targets are linux/amd64 and linux/arm64 without duplicates' ;;
+esac
+OUTPUT="${BUILD_OUTPUT:-push}"
+TAG="${BUILD_TAG:-${ENV}-build-${SOURCE_SHA:0:12}-$(date -u '+%Y%m%d%H%M%S')}"
+[[ "$TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]] || fail 'Invalid Docker tag'
+[[ "$TAG" != latest && "$TAG" != stage && "$TAG" != production ]] || fail 'Use a unique immutable build tag'
+REF="${REPO_NAME}:${TAG}"
+docker buildx version >/dev/null
+ARGS=(buildx build --platform "$PLATFORMS" --tag "$REF"
+  --build-arg "ENV=$ENV" --build-arg "TARGETENV=$ENV" --build-arg "BUILD_VERSION=$TAG"
+  --label "org.opencontainers.image.revision=$SOURCE_SHA")
+case "$OUTPUT" in
+  push)
+    [[ "$PLATFORMS" == *,* ]] || fail 'Publication requires both architectures; local single-platform checks use oci/load'
+    ARGS+=(--push)
+    ;;
+  oci)
+    : "${BUILD_OUTPUT_PATH:?Set an absolute BUILD_OUTPUT_PATH for OCI export}"
+    [[ "$BUILD_OUTPUT_PATH" == /* && "$BUILD_OUTPUT_PATH" != *,* && "$BUILD_OUTPUT_PATH" != *$'\n'* ]] || fail 'Invalid OCI output path'
+    GIT_ROOT="$(git rev-parse --show-toplevel)"
+    case "$BUILD_OUTPUT_PATH" in "$GIT_ROOT"/*) fail 'Write OCI artifacts outside the source repository' ;; esac
+    [[ ! -e "$BUILD_OUTPUT_PATH" ]] || fail 'OCI output already exists; choose a unique path'
+    ARGS+=(--output "type=oci,dest=$BUILD_OUTPUT_PATH" --metadata-file "${BUILD_OUTPUT_PATH}.metadata.json")
+    ;;
+  load)
+    [[ "$PLATFORMS" != *,* ]] || fail 'Local load requires exactly one explicit architecture'
+    ARGS+=(--load)
+    ;;
+  *) fail 'BUILD_OUTPUT must be push, oci or load' ;;
+esac
+printf 'BUILD SOURCE: %s\nBUILD PLATFORMS: %s\n' "$SOURCE_SHA" "$PLATFORMS"
+docker "${ARGS[@]}" .
+if [[ "$OUTPUT" == push ]]; then
+  DIGEST="$(docker buildx imagetools inspect --format '{{.Manifest.Digest}}' "$REF")"
+  [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]] || fail 'Registry did not return a valid index digest'
+  ACTUAL="$(docker buildx imagetools inspect --format '{{range .Manifest.Manifests}}{{printf "%s/%s\n" .Platform.OS .Platform.Architecture}}{{end}}' "$REF")"
+  for PLATFORM in linux/amd64 linux/arm64; do
+    grep -Fxq "$PLATFORM" <<< "$ACTUAL" || fail "Published index is missing $PLATFORM"
+  done
+  printf 'BUILD COMPLETE: %s\nBUILD DIGEST: %s@%s\n' "$REF" "$REPO_NAME" "$DIGEST"
+else
+  printf 'BUILD COMPLETE (%s, local qualification only): %s\n' "$OUTPUT" "$REF"
+fi

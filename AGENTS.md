@@ -190,3 +190,10 @@ A change is not ready until:
 - Relevant tests or validation commands have been run.
 - The final handoff reports which tests and regression commands passed, failed, or could not be run.
 - Template placeholders remain generic or have been intentionally replaced for the generated service.
+
+## Multi-architecture support and standard image builder
+
+- Maintain support for both `linux/amd64` and `linux/arm64` wherever the application's dependencies permit it. Evaluate both architectures when changing dependencies, base images, native modules or runtime behavior; preserve documented compatibility limitations and attempt practical remediation. Never claim ARM64 compatibility from a successful build alone.
+- Adopt the applicable Express or Python Docker template's existing `build-image` script. Application agents may change only its image identifier; do not fork its build logic, add helper build scripts, change platform selection or introduce application-specific build workflows. Any necessary deviation requires explicit developer direction and must be recorded; never assume an exception. Common builder improvements belong in the template and must be propagated consistently.
+- The standard script builds AMD64 and ARM64 together in one multi-platform Buildx invocation and publishes one image index. Use the existing script to build the candidate, execute the resulting image under ARM64 emulation and verify AMD64 behavior before committing, pushing and opening the application PR. Record actual image/source evidence; emulation does not prove native ARM performance. Keep qualification artifacts distinct from clean stage deployment images.
+- If a dependency cannot support ARM64 after practical remediation, document the reason, retain AMD64, and surface the limitation. Do not remove working AMD64 support or silently narrow the shared builder. Preserve stage-first validation, explicit production authorization and infrastructure/proxy deployment gates.

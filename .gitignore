@@ -108,3 +108,6 @@ dist
 
 # .DS_Store
 .DS_Store
+# Host-only build contract test caches.
+__pycache__/
+*.py[cod]

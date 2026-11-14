@@ -41,7 +41,7 @@ Use Yarn and commit `yarn.lock` changes with dependency updates. Rebuild the Doc
 When creating a real service:
 
 - Rename `express-docker-template` placeholders.
-- Replace `DOCKERHUBUSER/REPO_NAME` in `build-image`.
+- Set `REPO_NAME` to the generated service image repository when invoking `build-image`.
 - Replace the starter `/api` route with the real contract.
 - Delete `lib/sqs_poller.js` if the service does not consume SQS.
 - Update README and `docs/` with real commands, owners, ports, routes, and deployment details.

@@ -86,6 +86,20 @@ Use `docs/` for durable project knowledge that would make the README too long. R
 
 Update docs whenever code changes alter behavior, commands, dependencies, configuration, deployment, or operational expectations.
 
+## ESModule Governance
+
+- Author application code as native ESModules. Keep each standalone reusable
+  function in its own focused file with a default export and an explicit name.
+- Keep CLI entrypoints and request handlers thin; compose reusable source,
+  transformation, validation, orchestration and I/O helpers rather than embedding
+  them in entrypoint bodies or copying logic between partners.
+- Use explicit import paths and preserve clear integration boundaries. Document
+  public contracts with Google-style JSDoc, including inputs, outputs, errors,
+  side effects and environment/network/filesystem dependencies where relevant.
+- Prefer readable, concrete modules over generic frameworks or needless splitting
+  of trivial local expressions. Preserve documented CommonJS tooling boundaries
+  where required; do not convert unrelated existing code solely for uniformity.
+
 ## JavaScript Code Style
 
 All JavaScript and Node configuration code must be authored with durable JSDoc-style documentation.

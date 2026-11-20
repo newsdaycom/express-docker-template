@@ -42,3 +42,5 @@ Dobby supplies `DEPLOY_SOURCE_SHA` and `DEPLOY_RESULT_FILE`. The producer verifi
 the SHA, inspects the published platform image configs, and atomically writes the
 verified digest-pinned JSON result. Failed publication writes no success result.
 Source and target remain independent.
+
+For queued Dobby builds, verified `DEPLOY_SOURCE_SHA` remains authoritative when a branch advances. Manual stage builds without that queued SHA still require origin/stage. Source branch and build environment remain independent.

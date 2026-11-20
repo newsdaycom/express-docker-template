@@ -100,6 +100,17 @@ if args[:3] == ['buildx', 'imagetools', 'inspect']:
         self.assertNotEqual(self.invoke().returncode, 0)
         self.assertEqual(self.arguments(), [])
 
+    def test_queued_sha_survives_branch_advancement(self):
+        """Dobby's verified queued SHA stays authoritative after origin/stage moves."""
+        self.git('commit', '--allow-empty', '-qm', 'new stage')
+        newer = self.git('rev-parse', 'HEAD').strip()
+        self.git('update-ref', 'refs/remotes/origin/stage', newer)
+        self.git('checkout', '--detach', self.sha)
+        result = self.invoke(DEPLOY_SOURCE_SHA=self.sha)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('org.opencontainers.image.revision=' + self.sha,
+                      next(x for x in self.arguments() if x[:2] == ['buildx', 'build']))
+
     def test_missing_stage_reference_is_rejected(self):
         """Require a fetched stage identity rather than guessing the branch."""
         self.git('update-ref', '-d', 'refs/remotes/origin/stage')

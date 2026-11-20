@@ -30,7 +30,7 @@ if [[ "$QUALIFICATION" == 1 ]]; then
   fi
 else
   [[ "$DIRTY" == false ]] || fail 'Publication requires a clean committed checkout; qualify candidates locally first'
-  if [[ "$ENV" == stage ]]; then
+  if [[ "$ENV" == stage && -z "${DEPLOY_SOURCE_SHA:-}" ]]; then
     [[ "$SOURCE_SHA" == "$(git rev-parse --verify refs/remotes/origin/stage)" ]] || fail 'Stage publication must use origin/stage'
   fi
 fi

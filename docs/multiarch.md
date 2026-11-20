@@ -1,6 +1,6 @@
 # Multi-architecture image builds
 
-Default `build-image` output is one registry index containing Linux AMD64 and ARM64. Docker Buildx, Git and Bash are required; provide a builder with both native targets or explicitly identified emulation. Both architectures must finish successfully. Emulated startup is not native performance qualification. No production pipeline/cluster change is implied by this template.
+Default `build-image` output is one registry index containing Linux AMD64 and ARM64. Docker Buildx, Node.js, Git and Bash are required; provide a builder with both native targets or explicitly identified emulation. Both architectures must finish successfully. Emulated startup is not native performance qualification. No production pipeline/cluster change is implied by this template.
 
 ## Stage promotion and immutable identity
 
@@ -22,10 +22,23 @@ Use an absolute output outside the repository, with enough disk space. OCI expor
 ENV=stage REPO_NAME=localhost/qualification/example-service BUILD_OUTPUT=oci   BUILD_OUTPUT_PATH=/absolute/artifacts/example-service.tar ./build-image
 ```
 
-BUILD_PLATFORMS defaults to linux/amd64,linux/arm64. A single explicit architecture is allowed for local OCI/load checks only. BUILD_OUTPUT=load requires one platform; push requires both. Existing single-architecture rollback images remain available until functional/native qualification and deployment acceptance. OCI output can be imported into an OCI-capable local image store for isolated runtime tests; it is not automatically suitable for remote deployment.
+BUILD_PLATFORMS defaults to linux/amd64,linux/arm64. A single explicit architecture is supported for publication and local checks. BUILD_OUTPUT=load requires one platform; push verifies exactly the requested platforms. Existing single-architecture rollback images remain available until functional/native qualification and deployment acceptance. OCI output can be imported into an OCI-capable local image store for isolated runtime tests; it is not automatically suitable for remote deployment.
 
 ## Regression checks
 
 `python3 -m unittest discover -s tests/build_contract -v` runs isolated Git repositories and a fake Docker executable: stage revision/dirty-source guards, dual-platform publication, failed build propagation, missing index platform, OCI output selection and single-platform local load behavior. It makes no registry or cluster calls. Python 3 is needed only for this contract test; the build script itself uses Bash/Git/Docker.
 
 Actual builds and runtime observations are recorded separately after source integration. Existing application tests/lint still apply. Template startup smoke checks do not certify an application's external dependencies, persistent state or ARM performance.
+
+
+Set `BUILDX_BUILDER` to the IaC-managed named builder. On the shared ARM64 host,
+ARM64 runs natively and AMD64 runs under pinned emulation; both targets use the
+same `docker-container` builder. The default remains both platforms. Explicit
+`BUILD_PLATFORMS=linux/amd64` or `linux/arm64` publishes a supported single target.
+Build failures never silently remove an architecture. Dockerfile stage platform
+constraints remain effective.
+
+Dobby supplies `DEPLOY_SOURCE_SHA` and `DEPLOY_RESULT_FILE`. The producer verifies
+the SHA, inspects the published platform image configs, and atomically writes the
+verified digest-pinned JSON result. Failed publication writes no success result.
+Source and target remain independent.

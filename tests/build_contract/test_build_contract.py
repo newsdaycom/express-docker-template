@@ -45,7 +45,8 @@ if args[:3] == ['buildx', 'imagetools', 'inspect']:
     if 'Manifest.Digest' in args[args.index('--format') + 1]:
         print(os.getenv('REGISTRY_DIGEST', 'sha256:' + 'a' * 64))
     else:
-        print(os.getenv('REGISTRY_PLATFORMS', 'linux/amd64\\nlinux/arm64'))
+        platforms = os.getenv('REGISTRY_PLATFORMS', 'linux/amd64\\nlinux/arm64').splitlines()
+        print(json.dumps({p: {'os': p.split('/')[0], 'architecture': p.split('/')[1]} for p in platforms}))
 ''')
         fake.chmod(0o755)
         self.calls = self.root / 'calls.jsonl'
@@ -54,7 +55,7 @@ if args[:3] == ['buildx', 'imagetools', 'inspect']:
                     'REPO_NAME': 'example.invalid/service'}
         for key in ['BUILD_SOURCE_SHA', 'BUILD_OUTPUT', 'BUILD_OUTPUT_PATH',
                     'BUILD_PLATFORMS', 'BUILD_TAG', 'DOCKER_BUILD_EXIT',
-                    'REGISTRY_DIGEST', 'REGISTRY_PLATFORMS']:
+                    'REGISTRY_DIGEST', 'REGISTRY_PLATFORMS', 'DEPLOY_SOURCE_SHA', 'DEPLOY_RESULT_FILE', 'BUILDX_BUILDER']:
             self.env.pop(key, None)
 
     def tearDown(self):
@@ -159,10 +160,27 @@ if args[:3] == ['buildx', 'imagetools', 'inspect']:
         self.assertIn('--load', call)
         self.assertNotIn('--push', call)
 
-    def test_single_platform_publication_is_rejected(self):
-        """The new-service publication default cannot silently lose ARM64."""
-        self.assertNotEqual(self.invoke(BUILD_PLATFORMS='linux/amd64').returncode, 0)
-        self.assertFalse(any(x[:2] == ['buildx', 'build'] for x in self.arguments()))
+    def test_single_platform_publication_and_structured_result(self):
+        """Explicit AMD64 and ARM64 output use the selected builder and verified digest."""
+        for platform in ['linux/amd64', 'linux/arm64']:
+            result_file = self.root / 'result.json'
+            result = self.invoke(BUILD_PLATFORMS=platform, REGISTRY_PLATFORMS=platform,
+                                 BUILDX_BUILDER='worker-multiarch', DEPLOY_SOURCE_SHA=self.sha,
+                                 DEPLOY_RESULT_FILE=str(result_file))
+            self.assertEqual(result.returncode, 0, result.stderr)
+            image = json.loads(result_file.read_text())['images'][0]
+            self.assertEqual(image['reference'], 'example.invalid/service@sha256:' + 'a' * 64)
+            call = [x for x in self.arguments() if x[:2] == ['buildx', 'build']][-1]
+            self.assertEqual(call[call.index('--builder') + 1], 'worker-multiarch')
+
+    def test_worker_source_pin_and_no_result_on_failure(self):
+        """Reject source drift and do not emit a deployable result after failed publication."""
+        result_file = self.root / 'result.json'
+        self.assertNotEqual(self.invoke(DEPLOY_SOURCE_SHA='0' * 40).returncode, 0)
+        self.assertEqual(self.arguments(), [])
+        result = self.invoke(DOCKER_BUILD_EXIT='17', DEPLOY_RESULT_FILE=str(result_file))
+        self.assertEqual(result.returncode, 17)
+        self.assertFalse(result_file.exists())
 
     def test_mutable_tag_is_rejected(self):
         """Avoid overwriting a generic deployment or rollback alias."""

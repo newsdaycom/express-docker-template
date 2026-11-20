@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Purpose: build AMD64 and ARM64 together using the standard template workflow.
+# Purpose: build requested native/emulated architectures with a configured Buildx builder.
 # Production builds/deployments require their separate authorization.
 # Usage: ENV=stage REPO_NAME=newsday/example-service ./build-image
 # Inputs: BUILD_OUTPUT=push (default), oci, or load; BUILD_PLATFORMS defaults to
@@ -16,8 +16,10 @@ cd "$SCRIPT_DIR"
 : "${REPO_NAME:?Set REPO_NAME to the service image repository}"
 fail() { printf 'BUILD FAILED: %s\n' "$*" >&2; exit 1; }
 [[ "$REPO_NAME" != *DOCKERHUBUSER* && "$REPO_NAME" != *REPO_NAME* ]] || fail 'Replace the template image repository'
+[[ "$REPO_NAME" =~ ^[A-Za-z0-9._:/-]+$ ]] || fail 'Invalid image repository'
 SOURCE_SHA="$(git rev-parse HEAD)"
 [[ -z "${BUILD_SOURCE_SHA:-}" || "$BUILD_SOURCE_SHA" == "$SOURCE_SHA" ]] || fail 'BUILD_SOURCE_SHA does not match HEAD'
+[[ -z "${DEPLOY_SOURCE_SHA:-}" || "$DEPLOY_SOURCE_SHA" == "$SOURCE_SHA" ]] || fail 'DEPLOY_SOURCE_SHA does not match HEAD'
 # Test uncommitted candidates locally before committing or creating a PR.
 QUALIFICATION="${BUILD_QUALIFICATION:-0}"
 DIRTY=false
@@ -48,9 +50,11 @@ ARGS=(buildx build --platform "$PLATFORMS" --tag "$REF"
   --build-arg "ENV=$ENV" --build-arg "TARGETENV=$ENV" --build-arg "BUILD_VERSION=$TAG"
   --label "org.opencontainers.image.revision=$SOURCE_SHA"
   --label "org.newsday.source.dirty=$DIRTY")
+if [[ -n "${BUILDX_BUILDER:-}" ]]; then
+  ARGS+=(--builder "$BUILDX_BUILDER")
+fi
 case "$OUTPUT" in
   push)
-    [[ "$PLATFORMS" == *,* ]] || fail 'Publication requires both architectures; local single-platform checks use oci/load'
     ARGS+=(--push)
     ;;
   oci)
@@ -72,11 +76,33 @@ docker "${ARGS[@]}" .
 if [[ "$OUTPUT" == push ]]; then
   DIGEST="$(docker buildx imagetools inspect --format '{{.Manifest.Digest}}' "$REF")"
   [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]] || fail 'Registry did not return a valid index digest'
-  ACTUAL="$(docker buildx imagetools inspect --format '{{range .Manifest.Manifests}}{{printf "%s/%s\n" .Platform.OS .Platform.Architecture}}{{end}}' "$REF")"
-  for PLATFORM in linux/amd64 linux/arm64; do
+  ACTUAL="$(docker buildx imagetools inspect --format '{{json .Image}}' "$REF" | node -e '
+    let input = "";
+    process.stdin.on("data", (chunk) => input += chunk);
+    process.stdin.on("end", () => {
+      const image = JSON.parse(input);
+      const configs = image.architecture ? [image] : Object.values(image);
+      for (const config of configs)
+        if (config.os && config.architecture && config.architecture !== "unknown")
+          console.log(`${config.os}/${config.architecture}`);
+    });')"
+  IFS=, read -r -a REQUESTED_PLATFORMS <<< "$PLATFORMS"
+  for PLATFORM in "${REQUESTED_PLATFORMS[@]}"; do
     grep -Fxq "$PLATFORM" <<< "$ACTUAL" || fail "Published index is missing $PLATFORM"
   done
-  printf 'BUILD COMPLETE: %s\nBUILD DIGEST: %s@%s\n' "$REF" "$REPO_NAME" "$DIGEST"
+  for PLATFORM in $ACTUAL; do
+    [[ ",$PLATFORMS," == *",$PLATFORM,"* ]] || fail "Published output has unexpected platform $PLATFORM"
+  done
+  if [[ -n "${DEPLOY_RESULT_FILE:-}" ]]; then
+    # Worker-owned JSON is written only after registry verification succeeds.
+    RESULT_TMP="$(mktemp "${DEPLOY_RESULT_FILE}.XXXXXX")"
+    trap 'rm -f "$RESULT_TMP"' EXIT
+    printf '{"images":[{"repository":"%s","tag":"%s","digest":"%s","reference":"%s@%s"}]}\n' \
+      "$REPO_NAME" "$TAG" "$DIGEST" "$REPO_NAME" "$DIGEST" > "$RESULT_TMP"
+    mv -- "$RESULT_TMP" "$DEPLOY_RESULT_FILE"
+    trap - EXIT
+  fi
+  printf 'BUILD COMPLETE: %s@%s\nBUILD DIGEST: %s@%s\n' "$REPO_NAME" "$DIGEST" "$REPO_NAME" "$DIGEST"
 else
   printf 'BUILD COMPLETE (%s, local qualification only): %s\n' "$OUTPUT" "$REF"
 fi

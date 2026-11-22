@@ -166,6 +166,14 @@ Every generated project must maintain an ongoing regression battery as behavior 
 - Run the relevant regression tests before signing off on changes that touch covered behavior.
 - Keep obsolete regression tests current or remove them in the same change that intentionally retires the behavior they protect.
 
+## Version-Controlled Postman Collections
+
+- Every generated service with HTTP/API contracts must maintain an importable Postman Collection v2.1 in `postman/`, committed with its source, plus safe environment examples and documented import/run instructions. Include existing endpoints retrospectively when adopting this standard.
+- Treat collections as maintained contract artifacts. Every human or agentic change affecting endpoints, HTTP methods, paths, parameters, request/response bodies, headers, authentication, status codes, error behavior, or configuration used by requests must update affected requests, examples, assertions and environment templates in the same atomic commit. Adding a collection once does not fulfill this ongoing requirement.
+- Cover success and relevant failure/access cases, health checks and public contracts. Use variables for service URLs and externally supplied credentials. Never commit secrets, session cookies, tokens or private production data. Keep destructive/provider-mutating requests out of default smoke runs; production execution must be separately opt-in.
+- Validate collection/environment JSON and importability, and run relevant assertions against deterministic fixtures or an authorized test environment using a pinned Newman or equivalent runner. Document exact commands, prerequisites and results in `docs/testing.md`; describe HTTP contracts in `docs/api.md`.
+- Review collection impact in every change. CI and reviewers must check semantic synchronization as well as schema validity; document why an unaffected change needs no collection edits. A service without HTTP contracts must document that exception rather than invent sample endpoints.
+
 ## Docker Template Conventions
 
 - Keep images small, reproducible, and explicit about runtime assumptions.
@@ -201,6 +209,7 @@ A change is not ready until:
 - Public JavaScript interfaces have useful JSDoc comments.
 - New or changed behavior has tests, including regression coverage when the change fixes a bug or protects an established contract.
 - Required environment variables and operational assumptions are documented.
+- Version-controlled Postman requests, examples, assertions and environment templates match the current HTTP contracts; affected collections were updated in the same atomic commit and relevant checks were run.
 - Relevant tests or validation commands have been run.
 - The final handoff reports which tests and regression commands passed, failed, or could not be run.
 - Template placeholders remain generic or have been intentionally replaced for the generated service.

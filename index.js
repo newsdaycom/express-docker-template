@@ -21,6 +21,7 @@ import apiRouter from './routes/api';
 import api_headers from './lib/api_headers';
 import api_errors from './lib/api_errors';
 import logger from './lib/logger';
+import getRoot from './routes/handlers/get_root';
 
 const app = express();
 
@@ -43,9 +44,7 @@ app.use('/api', api_headers, apiRouter, api_errors);
  * @param {import('express').NextFunction} next Express continuation callback.
  * @returns {void}
  */
-app.get('/', (req, res, next) => {
-  res.send('<h1>Microservice is running</h1>');
-});
+app.get('/', getRoot);
 
 /**
  * Start the local/container HTTP listener.

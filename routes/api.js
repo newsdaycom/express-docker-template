@@ -11,6 +11,7 @@
  */
 
 import express from 'express';
+import getApi from './handlers/get_api';
 
 const router = express.Router();
 
@@ -22,11 +23,6 @@ const router = express.Router();
  * @param {import('express').NextFunction} next Express continuation callback.
  * @returns {void}
  */
-router.get('/', (req, res, next) => {
-  res.json({
-    success: true,
-    message: 'API Up!'
-  });
-});
+router.get('/', getApi);
 
 export default router;

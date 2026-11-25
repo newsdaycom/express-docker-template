@@ -1,4 +1,49 @@
 #!/usr/bin/env bash
+# Human local development only; deployment producers keep their own multiarch policy.
+# Build and run one native Linux platform using the local Docker engine.
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
+if [[ "${ENV:-local}" != local ]]; then
+  printf '%s\n' 'Local rebuild requires ENV=local. Unset ENV; use the deployment build-image for releases.' >&2
+  exit 2
+fi
+export ENV=local
+export BUILD_VERSION="${BUILD_VERSION:-local-build}"
+unset BUILD_PLATFORMS
+# Compose must use the local engine builder, never an inherited deployment builder.
+unset BUILDX_BUILDER
+command -v docker >/dev/null || { printf '%s\n' 'Install and start Docker before rebuilding.' >&2; exit 1; }
+docker compose version >/dev/null
+BUILDX_BUILDER="$(docker context show)"
+export BUILDX_BUILDER
+LOCAL_REBUILD_ENDPOINT="${DOCKER_HOST:-$(docker context inspect --format '{{.Endpoints.docker.Host}}')}"
+case "$LOCAL_REBUILD_ENDPOINT" in
+  unix://*|npipe://*) ;;
+  *) printf '%s\n' 'Local rebuild requires a local Docker engine context/socket.' >&2; exit 1 ;;
+esac
+LOCAL_REBUILD_ARCH="$(docker version --format '{{.Server.Arch}}')"
+case "$LOCAL_REBUILD_ARCH" in
+  amd64|x86_64) export DOCKER_DEFAULT_PLATFORM=linux/amd64 ;;
+  arm64|aarch64) export DOCKER_DEFAULT_PLATFORM=linux/arm64 ;;
+  *) printf 'Unsupported local Docker architecture: %s\n' "$LOCAL_REBUILD_ARCH" >&2; exit 1 ;;
+esac
+# Keep rendered configuration private: it can contain developer credentials.
+LOCAL_REBUILD_CONFIG="$(docker compose config)"
+while read -r LOCAL_REBUILD_KEY LOCAL_REBUILD_VALUE; do
+  if [[ "$LOCAL_REBUILD_KEY" == platform: && "$LOCAL_REBUILD_VALUE" != "$DOCKER_DEFAULT_PLATFORM" ]]; then
+    printf 'Compose requires %s; this engine is %s. Resolve the service dependency before native startup.\n' "$LOCAL_REBUILD_VALUE" "$DOCKER_DEFAULT_PLATFORM" >&2
+    exit 1
+  fi
+done <<< "$LOCAL_REBUILD_CONFIG"
+if [[ "$LOCAL_REBUILD_CONFIG" == *'name: special-projects'* ]]; then
+  docker network inspect special-projects >/dev/null 2>&1 || {
+    printf '%s\n' 'Create the required local network first: docker network create special-projects' >&2
+    exit 1
+  }
+fi
+unset LOCAL_REBUILD_CONFIG LOCAL_REBUILD_ENDPOINT LOCAL_REBUILD_ARCH LOCAL_REBUILD_KEY LOCAL_REBUILD_VALUE
+# Existing service-specific build/start behavior follows. A failed build stops here.
+
 #
 # Purpose:
 #   Rebuild and restart the local Docker Compose service for template
@@ -13,10 +58,7 @@
 # Side Effects:
 #   Rebuilds the image, stops/removes the current container, starts a new
 #   container, and follows container logs.
-set -euo pipefail
 
-# Fail fast before Compose starts if the caller forgot the environment name.
-: "${ENV:?ENV must be set before rebuilding the local service}"
 
 docker compose build --build-arg ENV="$ENV"
 docker compose stop
